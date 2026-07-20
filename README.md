@@ -12,7 +12,7 @@ This repository publishes five packages under the `@avro-effect` npm scope:
 | `@avro-effect/kafka` | Kafka key/value serializers and deserializers. |
 | `@avro-effect/node` | Node.js Avro object-container file helpers. |
 
-The packages target the Effect v4 line from `effect-smol` and currently use `effect@4.0.0-beta.87`.
+The packages target the Effect v4 beta line and currently use `effect@4.0.0-beta.99`.
 
 ## Install
 
