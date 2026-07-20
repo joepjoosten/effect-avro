@@ -15,14 +15,14 @@ importers:
         specifier: ^0.85.1
         version: 0.85.1
       '@effect/vitest':
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -33,14 +33,14 @@ importers:
   packages/core:
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -58,14 +58,14 @@ importers:
         version: link:../schema-registry
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -80,14 +80,14 @@ importers:
         version: link:../core
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -102,14 +102,14 @@ importers:
         version: link:../core
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -124,14 +124,14 @@ importers:
         version: link:../core
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-beta.87
-        version: 4.0.0-beta.87
+        specifier: 4.0.0-beta.99
+        version: 4.0.0-beta.99
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -204,10 +204,10 @@ packages:
     resolution: {integrity: sha512-EXnJjIy6zQ3nUO/MZ+ynWUb8B895KZPotd1++oTs9JjDkplwM7cb6zo8Zq2zU6piwq+KflO7amXbEfj1UMpHkw==}
     hasBin: true
 
-  '@effect/vitest@4.0.0-beta.87':
-    resolution: {integrity: sha512-+6GQcyyOHs7e+pKPhiEQoZeFMwGIDR03ybIfUseXD7bC4DlmoCioTJA4Bt+lQ5C8swAJnet3cE/TJ9AxJ2+GVg==}
+  '@effect/vitest@4.0.0-beta.99':
+    resolution: {integrity: sha512-SiZo3UGTsG2itbqLU1SJVmFraK+0AkrEU7ZLRpQALx3lFRBaohzB/7UQKVsRjCHHjDg0kNkGitZusGRN3mVAhg==}
     peerDependencies:
-      effect: ^4.0.0-beta.87
+      effect: ^4.0.0-beta.99
       vitest: ^3.0.0 || ^4.0.0
 
   '@emnapi/core@1.11.1':
@@ -486,8 +486,8 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  effect@4.0.0-beta.87:
-    resolution: {integrity: sha512-GANlkUQo9pPN4tIOeUhF/gdgBq4OA1w5lUstT/GjS3Csd48Y6KV1FbxsEtq4/SNRBkl6JE0nU9pP9fi6/+GU7A==}
+  effect@4.0.0-beta.99:
+    resolution: {integrity: sha512-hP1C61uzINfLl/4kKMwcqksxd34s4sQ3VSjsWjhGrkx9CRlXaqnfOK9dpTEKynQ6rA7wU9rb3c+48eDYw7uzxA==}
 
   enquirer@2.4.1:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
@@ -511,8 +511,8 @@ packages:
   extendable-error@0.1.7:
     resolution: {integrity: sha512-UOiS2in6/Q0FK0R0q6UY9vYpQ21mr/Qn1KOnte7vsACuNJf514WvCCUHSRCPcgjPT2bAhNIJdlE6bVap1GKmeg==}
 
-  fast-check@4.8.0:
-    resolution: {integrity: sha512-GOJ158CUMnN6cSahsv4+ExARvIDuzzinFjkp0E9WtiBa5zcVeLozVkWaE4IzFcc+Y48Wp1EDlUZsXRyAztQcSg==}
+  fast-check@4.9.0:
+    resolution: {integrity: sha512-7ms6T7SybUev/PQITciI0yLM2pOSFy5zpG8Ty7tQofcVaQUvrMXp6CBwqF6fThLCLOrfBtuHAtwq6Yu4XPCllg==}
     engines: {node: '>=12.17.0'}
 
   fast-glob@3.3.3:
@@ -718,8 +718,8 @@ packages:
   msgpackr@2.0.4:
     resolution: {integrity: sha512-o1C5KRmuRt+apqMr1HuGSqWStZoRBUpEsCsl15uM9VdAF1qHLtvMOU2En747EnTyEl6c4pzPewRMFF31s1CNbA==}
 
-  multipasta@0.2.7:
-    resolution: {integrity: sha512-KPA58d68KgGil15oDqXjkUBEBYc00XvbPj5/X+dyzeo/lWm9Nc25pQRlf1D+gv4OpK7NM0J1odrbu9JNNGvynA==}
+  multipasta@0.2.8:
+    resolution: {integrity: sha512-ZPWuMKyv0cSO29f7hozp+k6+crZbQijV8ipMvxNxRf2SwtYGTX1ZX89Kd20VV4H9Znonx+EQn+iy1wGQsJ+b+Q==}
 
   nanoid@3.3.15:
     resolution: {integrity: sha512-y7Wygv/7mEOvxTuEQDB8StXdMRBWf1kR/tlhAzBRUFkB2jfcLOAxO/SHmOO2zgz1pVgK29/kyupn059/bCHdjA==}
@@ -902,8 +902,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  toml@4.1.1:
-    resolution: {integrity: sha512-EBJnVBr3dTXdA89WVFoAIPUqkBjxPMwRqsfuo1r240tKFHXv3zgca4+NJib/h6TyvGF7vOawz0jGuryJCdNHrw==}
+  toml@4.3.0:
+    resolution: {integrity: sha512-lVb8X9BsPVuH0M4BKeS91tXAmJvCjQ5UIyAbQFaxkKGyUFK2RPkhwaFSQH8vbpl1d23eu/IBH+dwVMHWaq9A5A==}
     engines: {node: '>=20'}
 
   tslib@2.8.1:
@@ -1173,9 +1173,9 @@ snapshots:
 
   '@effect/language-service@0.85.1': {}
 
-  '@effect/vitest@4.0.0-beta.87(effect@4.0.0-beta.87)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))':
+  '@effect/vitest@4.0.0-beta.99(effect@4.0.0-beta.99)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))':
     dependencies:
-      effect: 4.0.0-beta.87
+      effect: 4.0.0-beta.99
       vitest: 4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0))
 
   '@emnapi/core@1.11.1':
@@ -1414,16 +1414,16 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  effect@4.0.0-beta.87:
+  effect@4.0.0-beta.99:
     dependencies:
       '@standard-schema/spec': 1.1.0
-      fast-check: 4.8.0
+      fast-check: 4.9.0
       find-my-way-ts: 0.1.6
       ini: 7.0.0
       kubernetes-types: 1.30.0
       msgpackr: 2.0.4
-      multipasta: 0.2.7
-      toml: 4.1.1
+      multipasta: 0.2.8
+      toml: 4.3.0
       uuid: 14.0.1
       yaml: 2.9.0
 
@@ -1444,7 +1444,7 @@ snapshots:
 
   extendable-error@0.1.7: {}
 
-  fast-check@4.8.0:
+  fast-check@4.9.0:
     dependencies:
       pure-rand: 8.4.0
 
@@ -1630,7 +1630,7 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.4
 
-  multipasta@0.2.7: {}
+  multipasta@0.2.8: {}
 
   nanoid@3.3.15: {}
 
@@ -1781,7 +1781,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  toml@4.1.1: {}
+  toml@4.3.0: {}
 
   tslib@2.8.1:
     optional: true
