@@ -1,6 +1,6 @@
-import type { UserConfig } from "vitest/config"
+import type { ViteUserConfig } from "vitest/config"
 
-const config: UserConfig = {
+const config: ViteUserConfig = {
   resolve: {
     alias: {
       "@avro-effect/core": new URL("./packages/core/src/index.ts", import.meta.url).pathname,
@@ -10,7 +10,7 @@ const config: UserConfig = {
       "@avro-effect/schema-registry": new URL("./packages/schema-registry/src/index.ts", import.meta.url).pathname
     }
   },
-  esbuild: {
+  oxc: {
     target: "es2022"
   },
   test: {
