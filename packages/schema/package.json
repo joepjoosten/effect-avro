@@ -1,6 +1,6 @@
 {
   "name": "@effect-avro/schema",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "license": "MIT",
   "description": "Effect Schema v4 Avro schema compiler and binary codec",
