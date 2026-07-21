@@ -35,16 +35,16 @@
     "removeComments": false,
     "plugins": [{ "name": "@effect/language-service" }],
     "paths": {
-      "@avro-effect/core": ["./packages/core/src/index.ts"],
-      "@avro-effect/core/*": ["./packages/core/src/*.ts"],
-      "@avro-effect/kafka": ["./packages/kafka/src/index.ts"],
-      "@avro-effect/kafka/*": ["./packages/kafka/src/*.ts"],
-      "@avro-effect/node": ["./packages/node/src/index.ts"],
-      "@avro-effect/node/*": ["./packages/node/src/*.ts"],
-      "@avro-effect/schema": ["./packages/schema/src/index.ts"],
-      "@avro-effect/schema/*": ["./packages/schema/src/*.ts"],
-      "@avro-effect/schema-registry": ["./packages/schema-registry/src/index.ts"],
-      "@avro-effect/schema-registry/*": ["./packages/schema-registry/src/*.ts"]
+      "@effect-avro/core": ["./packages/core/src/index.ts"],
+      "@effect-avro/core/*": ["./packages/core/src/*.ts"],
+      "@effect-avro/kafka": ["./packages/kafka/src/index.ts"],
+      "@effect-avro/kafka/*": ["./packages/kafka/src/*.ts"],
+      "@effect-avro/node": ["./packages/node/src/index.ts"],
+      "@effect-avro/node/*": ["./packages/node/src/*.ts"],
+      "@effect-avro/schema": ["./packages/schema/src/index.ts"],
+      "@effect-avro/schema/*": ["./packages/schema/src/*.ts"],
+      "@effect-avro/schema-registry": ["./packages/schema-registry/src/index.ts"],
+      "@effect-avro/schema-registry/*": ["./packages/schema-registry/src/*.ts"]
     }
   }
 }

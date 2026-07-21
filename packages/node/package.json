@@ -1,12 +1,12 @@
 {
-  "name": "@avro-effect/node",
+  "name": "@effect-avro/node",
   "version": "0.0.2",
   "type": "module",
   "license": "MIT",
-  "description": "Node.js Avro object container file helpers for avro-effect",
+  "description": "Node.js Avro object container file helpers for @effect-avro",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joepjoosten/avro-effect.git",
+    "url": "https://github.com/joepjoosten/effect-avro.git",
     "directory": "packages/node"
   },
   "exports": {
@@ -34,7 +34,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@avro-effect/core": "workspace:^"
+    "@effect-avro/core": "workspace:^"
   },
   "peerDependencies": {
     "effect": "4.0.0-beta.99"

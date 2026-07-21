@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import { readFile, writeFile } from "@avro-effect/node"
+import { readFile, writeFile } from "@effect-avro/node"
 import {
   OrderSnapshot,
   OrderSnapshotAvroSchema

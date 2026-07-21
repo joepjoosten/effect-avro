@@ -1,18 +1,18 @@
-# @avro-effect/schema-registry
+# @effect-avro/schema-registry
 
 Effect-friendly Confluent Schema Registry client and Avro wire framing.
 
 ## Install
 
 ```sh
-pnpm add @avro-effect/schema-registry @avro-effect/core effect
+pnpm add @effect-avro/schema-registry @effect-avro/core effect
 ```
 
 ## Usage
 
 ```ts
 import { Effect } from "effect"
-import { SchemaRegistry, decode, encode } from "@avro-effect/schema-registry"
+import { SchemaRegistry, decode, encode } from "@effect-avro/schema-registry"
 
 const schema = {
   type: "record",

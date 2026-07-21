@@ -1,4 +1,4 @@
-# @avro-effect/core
+# @effect-avro/core
 
 ## 0.0.1
 

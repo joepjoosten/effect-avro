@@ -13,7 +13,7 @@ import {
   subjectName
 } from "../src/index.js"
 
-describe("@avro-effect/schema-registry", () => {
+describe("@effect-avro/schema-registry", () => {
   const schema = {
     type: "record",
     name: "Event",

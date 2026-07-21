@@ -1,21 +1,21 @@
-# @avro-effect/kafka
+# @effect-avro/kafka
 
-Kafka serializers and deserializers for the `@avro-effect` packages.
+Kafka serializers and deserializers for the `@effect-avro` packages.
 
 This package is Kafka-client agnostic. It returns functions that work with message buffers, so applications can plug them into KafkaJS, node-rdkafka, or custom Effect Stream consumers.
 
 ## Install
 
 ```sh
-pnpm add @avro-effect/kafka @avro-effect/core @avro-effect/schema-registry effect
+pnpm add @effect-avro/kafka @effect-avro/core @effect-avro/schema-registry effect
 ```
 
 ## Usage
 
 ```ts
 import { Effect, Layer } from "effect"
-import { SchemaRegistry } from "@avro-effect/schema-registry"
-import { KafkaAvro, decodeValue, serializeRegistryValue } from "@avro-effect/kafka"
+import { SchemaRegistry } from "@effect-avro/schema-registry"
+import { KafkaAvro, decodeValue, serializeRegistryValue } from "@effect-avro/kafka"
 
 const schema = {
   type: "record",

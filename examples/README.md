@@ -1,8 +1,8 @@
-# @avro-effect examples
+# @effect-avro examples
 
 These examples show how the packages fit together in common application workflows.
 
-The examples are Kafka-client agnostic. They use `KafkaMessage` from `@avro-effect/kafka` as the message shape, so the same functions can be adapted to KafkaJS, node-rdkafka, Effect Streams, or a custom message bus.
+The examples are Kafka-client agnostic. They use `KafkaMessage` from `@effect-avro/kafka` as the message shape, so the same functions can be adapted to KafkaJS, node-rdkafka, Effect Streams, or a custom message bus.
 
 ## Files
 
@@ -42,7 +42,7 @@ This preserves Effect Schema behavior such as `_tag` restoration for tagged unio
 - Producers can use `checkCompatibility` before registering a new schema version.
 - Consumers can use `Effect.catchTag` for registry, framing, and domain decode failures.
 - Node jobs can write object-container archives for replay, analytics ingestion, or long-term storage.
-- Browser producers can use `@avro-effect/core`, `@avro-effect/schema`, `@avro-effect/schema-registry`, and `@avro-effect/kafka` because those packages stay platform-neutral.
+- Browser producers can use `@effect-avro/core`, `@effect-avro/schema`, `@effect-avro/schema-registry`, and `@effect-avro/kafka` because those packages stay platform-neutral.
 
 ## Migrating Kafka Helper Libraries
 
@@ -51,5 +51,5 @@ The existing packages replace the Avro, Confluent frame, schema-registry cache, 
 Keep concrete Kafka clients and cloud credentials in adapters:
 
 - A KafkaJS producer can be wrapped as a `ProducerLike` and exposed through an Effect `Context.Service` plus `Layer`.
-- AWS Secrets Manager, Confluent SASL credentials, HTTP proxy agents, and AWS X-Ray are Node/cloud concerns. They belong in application code today, or in a future companion package such as `@avro-effect/kafkajs` or `@avro-effect/aws-confluent`.
+- AWS Secrets Manager, Confluent SASL credentials, HTTP proxy agents, and AWS X-Ray are Node/cloud concerns. They belong in application code today, or in a future companion package such as `@effect-avro/kafkajs` or `@effect-avro/aws-confluent`.
 - Generic object mappers such as `undefined` to `null` and ISO strings to `Date` should usually be Effect Schema transformations on the domain schema instead of global Kafka middleware.

@@ -1,5 +1,5 @@
-import * as Avro from "@avro-effect/core"
-import * as Registry from "@avro-effect/schema-registry"
+import * as Avro from "@effect-avro/core"
+import * as Registry from "@effect-avro/schema-registry"
 import { Context, Effect, Layer, Schema } from "effect"
 
 export const KafkaMessage = Schema.Struct({
@@ -189,7 +189,7 @@ export interface KafkaAvroService {
 }
 
 export class KafkaAvro extends Context.Service<KafkaAvro, KafkaAvroService>()(
-  "@avro-effect/kafka/KafkaAvro"
+  "@effect-avro/kafka/KafkaAvro"
 ) {
   static readonly layer: Layer.Layer<KafkaAvro, never, Registry.SchemaRegistry> = Layer.effect(
     KafkaAvro,

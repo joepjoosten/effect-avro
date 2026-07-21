@@ -16,7 +16,7 @@ import {
   writeContainerFile
 } from "../src/index.js"
 
-describe("@avro-effect/node", () => {
+describe("@effect-avro/node", () => {
   const schema = {
     type: "record",
     name: "Event",
@@ -63,7 +63,7 @@ describe("@avro-effect/node", () => {
 
   it.effect("writes and reads files", () =>
     Effect.gen(function*() {
-      const dir = yield* Effect.tryPromise(() => Fs.mkdtemp(Path.join(Os.tmpdir(), "avro-effect-")))
+      const dir = yield* Effect.tryPromise(() => Fs.mkdtemp(Path.join(Os.tmpdir(), "effect-avro-")))
       const file = Path.join(dir, "events.avro")
 
       yield* writeContainerFile(file, schema, values)
@@ -74,7 +74,7 @@ describe("@avro-effect/node", () => {
 
   it.effect("exposes file helpers through an AvroNode service layer", () =>
     Effect.gen(function*() {
-      const dir = yield* Effect.tryPromise(() => Fs.mkdtemp(Path.join(Os.tmpdir(), "avro-effect-")))
+      const dir = yield* Effect.tryPromise(() => Fs.mkdtemp(Path.join(Os.tmpdir(), "effect-avro-")))
       const file = Path.join(dir, "events.avro")
 
       yield* writeFile(file, schema, values)

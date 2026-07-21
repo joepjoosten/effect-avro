@@ -1,5 +1,5 @@
-import type { AvroSchema } from "@avro-effect/core"
-import type { FetchLike } from "@avro-effect/schema-registry"
+import type { AvroSchema } from "@effect-avro/core"
+import type { FetchLike } from "@effect-avro/schema-registry"
 import { Schema } from "effect"
 
 export const StoredSchema = Schema.Struct({

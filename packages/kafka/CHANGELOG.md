@@ -1,4 +1,4 @@
-# @avro-effect/kafka
+# @effect-avro/kafka
 
 ## 0.0.1
 

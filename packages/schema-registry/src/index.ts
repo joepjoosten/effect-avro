@@ -1,4 +1,4 @@
-import * as Avro from "@avro-effect/core"
+import * as Avro from "@effect-avro/core"
 import { Context, Effect, Layer, Schema } from "effect"
 
 export const SchemaReference = Schema.Struct({
@@ -72,7 +72,7 @@ export interface SchemaRegistryClient {
 }
 
 export class SchemaRegistry extends Context.Service<SchemaRegistry, SchemaRegistryClient>()(
-  "@avro-effect/schema-registry/SchemaRegistry"
+  "@effect-avro/schema-registry/SchemaRegistry"
 ) {
   static readonly layer = (options: SchemaRegistryClientOptions): Layer.Layer<SchemaRegistry, SchemaRegistryClientError> =>
     Layer.effect(

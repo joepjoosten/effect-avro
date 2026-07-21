@@ -4,7 +4,7 @@ import {
   register,
   SchemaRegistry,
   type SchemaRegistryClientError
-} from "@avro-effect/schema-registry"
+} from "@effect-avro/schema-registry"
 import {
   encodeOrderEvent,
   OrderCancelled,
@@ -127,7 +127,7 @@ export interface KafkaPublisherService {
 const textEncoder = new TextEncoder()
 
 export class KafkaPublisher extends Context.Service<KafkaPublisher, KafkaPublisherService>()(
-  "@avro-effect/examples/KafkaPublisher"
+  "@effect-avro/examples/KafkaPublisher"
 ) {
   static readonly layer = (
     producer: ProducerLike,

@@ -3,11 +3,11 @@ import type { ViteUserConfig } from "vitest/config"
 const config: ViteUserConfig = {
   resolve: {
     alias: {
-      "@avro-effect/core": new URL("./packages/core/src/index.ts", import.meta.url).pathname,
-      "@avro-effect/kafka": new URL("./packages/kafka/src/index.ts", import.meta.url).pathname,
-      "@avro-effect/node": new URL("./packages/node/src/index.ts", import.meta.url).pathname,
-      "@avro-effect/schema": new URL("./packages/schema/src/index.ts", import.meta.url).pathname,
-      "@avro-effect/schema-registry": new URL("./packages/schema-registry/src/index.ts", import.meta.url).pathname
+      "@effect-avro/core": new URL("./packages/core/src/index.ts", import.meta.url).pathname,
+      "@effect-avro/kafka": new URL("./packages/kafka/src/index.ts", import.meta.url).pathname,
+      "@effect-avro/node": new URL("./packages/node/src/index.ts", import.meta.url).pathname,
+      "@effect-avro/schema": new URL("./packages/schema/src/index.ts", import.meta.url).pathname,
+      "@effect-avro/schema-registry": new URL("./packages/schema-registry/src/index.ts", import.meta.url).pathname
     }
   },
   oxc: {

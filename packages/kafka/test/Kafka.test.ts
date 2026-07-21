@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Layer } from "effect"
-import { makeClient, SchemaRegistry } from "@avro-effect/schema-registry"
+import { makeClient, SchemaRegistry } from "@effect-avro/schema-registry"
 import {
   avroDeserializer,
   avroSerializer,
@@ -12,7 +12,7 @@ import {
   registryValueSerializer
 } from "../src/index.js"
 
-describe("@avro-effect/kafka", () => {
+describe("@effect-avro/kafka", () => {
   const schema = {
     type: "record",
     name: "Event",

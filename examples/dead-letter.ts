@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect"
-import { KafkaMessage } from "@avro-effect/kafka"
-import { InvalidRegistryFrame, SchemaRegistryHttpError } from "@avro-effect/schema-registry"
+import { KafkaMessage } from "@effect-avro/kafka"
+import { InvalidRegistryFrame, SchemaRegistryHttpError } from "@effect-avro/schema-registry"
 import {
   decodeOrderMessage,
   MissingKafkaValue,

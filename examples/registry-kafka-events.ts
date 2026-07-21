@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect"
-import type { KafkaMessage } from "@avro-effect/kafka"
+import type { KafkaMessage } from "@effect-avro/kafka"
 import {
   decodeConfluentFrame,
   encodeConfluentFrame,
@@ -8,7 +8,7 @@ import {
   register,
   SchemaRegistry,
   type SchemaRegistryClientError
-} from "@avro-effect/schema-registry"
+} from "@effect-avro/schema-registry"
 import {
   decodeOrderEvent,
   encodeOrderEvent,

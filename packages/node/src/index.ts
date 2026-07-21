@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer"
 import { randomBytes } from "node:crypto"
 import * as Fs from "node:fs/promises"
 import * as Zlib from "node:zlib"
-import * as Avro from "@avro-effect/core"
+import * as Avro from "@effect-avro/core"
 import { Context, Effect, FileSystem, Layer, PlatformError, Schema } from "effect"
 
 export type ContainerCodec = "null" | "deflate"
@@ -77,7 +77,7 @@ export const nodeFileSystemLayer: Layer.Layer<FileSystem.FileSystem> = FileSyste
 })
 
 export class AvroNode extends Context.Service<AvroNode, AvroNodeService>()(
-  "@avro-effect/node/AvroNode"
+  "@effect-avro/node/AvroNode"
 ) {
   static readonly layerNoDeps: Layer.Layer<AvroNode, never, FileSystem.FileSystem> = Layer.effect(
     AvroNode,

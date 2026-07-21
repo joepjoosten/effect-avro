@@ -15,7 +15,7 @@ class Post extends Schema.TaggedClass<Post>()("Post", {
   metadata: Schema.Record(Schema.String, Schema.String)
 }) {}
 
-describe("@avro-effect/schema", () => {
+describe("@effect-avro/schema", () => {
   it.effect("round-trips Effect classes through Avro binary", () =>
     Effect.gen(function*() {
       const PostAvro = avro(Post)

@@ -1,19 +1,19 @@
-# @avro-effect/core
+# @effect-avro/core
 
 Native Avro runtime primitives and codecs for Effect v4 projects.
 
-`@avro-effect/core` provides the lower-level runtime used by `@avro-effect/schema`. It handles Avro schema model types, named references, and binary encoding/decoding without depending on `avro-js`.
+`@effect-avro/core` provides the lower-level runtime used by `@effect-avro/schema`. It handles Avro schema model types, named references, and binary encoding/decoding without depending on `avro-js`.
 
 ## Install
 
 ```sh
-pnpm add @avro-effect/core effect
+pnpm add @effect-avro/core effect
 ```
 
 ## Usage
 
 ```ts
-import { decode, encode, parse } from "@avro-effect/core"
+import { decode, encode, parse } from "@effect-avro/core"
 
 const schema = {
   type: "record",

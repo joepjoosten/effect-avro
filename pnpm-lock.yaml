@@ -50,10 +50,10 @@ importers:
 
   packages/kafka:
     dependencies:
-      '@avro-effect/core':
+      '@effect-avro/core':
         specifier: workspace:^
         version: link:../core
-      '@avro-effect/schema-registry':
+      '@effect-avro/schema-registry':
         specifier: workspace:^
         version: link:../schema-registry
     devDependencies:
@@ -75,7 +75,7 @@ importers:
 
   packages/node:
     dependencies:
-      '@avro-effect/core':
+      '@effect-avro/core':
         specifier: workspace:^
         version: link:../core
     devDependencies:
@@ -97,7 +97,7 @@ importers:
 
   packages/schema:
     dependencies:
-      '@avro-effect/core':
+      '@effect-avro/core':
         specifier: workspace:^
         version: link:../core
     devDependencies:
@@ -119,7 +119,7 @@ importers:
 
   packages/schema-registry:
     dependencies:
-      '@avro-effect/core':
+      '@effect-avro/core':
         specifier: workspace:^
         version: link:../core
     devDependencies:

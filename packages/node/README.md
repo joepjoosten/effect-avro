@@ -1,20 +1,20 @@
-# @avro-effect/node
+# @effect-avro/node
 
-Node.js Avro object container file helpers for `@avro-effect/core`.
+Node.js Avro object container file helpers for `@effect-avro/core`.
 
 The default `AvroNode.layer` is Node-specific and provides the Effect `FileSystem.FileSystem` service with `node:fs/promises`. Use `AvroNode.layerNoDeps` when an application wants to provide its own filesystem implementation.
 
 ## Install
 
 ```sh
-pnpm add @avro-effect/node @avro-effect/core effect
+pnpm add @effect-avro/node @effect-avro/core effect
 ```
 
 ## Usage
 
 ```ts
 import { Effect } from "effect"
-import { AvroNode, decodeContainer, encodeContainer, readFile, writeFile } from "@avro-effect/node"
+import { AvroNode, decodeContainer, encodeContainer, readFile, writeFile } from "@effect-avro/node"
 
 const schema = {
   type: "record",

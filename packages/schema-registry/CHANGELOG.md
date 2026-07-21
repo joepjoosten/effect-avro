@@ -1,4 +1,4 @@
-# @avro-effect/schema-registry
+# @effect-avro/schema-registry
 
 ## 0.0.1
 

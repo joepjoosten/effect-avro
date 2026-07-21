@@ -1,44 +1,44 @@
-# @avro-effect
+# @effect-avro
 
 Effect v4 packages for working with Apache Avro schemas and binary data.
 
-This repository publishes five packages under the `@avro-effect` npm scope:
+This repository publishes five packages under the `@effect-avro` npm scope:
 
 | Package | Purpose |
 | --- | --- |
-| `@avro-effect/core` | Native Avro schema model plus binary encoder/decoder. |
-| `@avro-effect/schema` | Effect Schema v4 to Avro compiler, Avro to Effect Schema importer, and `Schema.Codec` integration. |
-| `@avro-effect/schema-registry` | Confluent Schema Registry client and wire framing. |
-| `@avro-effect/kafka` | Kafka key/value serializers and deserializers. |
-| `@avro-effect/node` | Node.js Avro object-container file helpers. |
+| `@effect-avro/core` | Native Avro schema model plus binary encoder/decoder. |
+| `@effect-avro/schema` | Effect Schema v4 to Avro compiler, Avro to Effect Schema importer, and `Schema.Codec` integration. |
+| `@effect-avro/schema-registry` | Confluent Schema Registry client and wire framing. |
+| `@effect-avro/kafka` | Kafka key/value serializers and deserializers. |
+| `@effect-avro/node` | Node.js Avro object-container file helpers. |
 
 The packages target the Effect v4 beta line and currently use `effect@4.0.0-beta.99`.
 
 ## Install
 
-Use `@avro-effect/schema` when you want Effect Schema integration:
+Use `@effect-avro/schema` when you want Effect Schema integration:
 
 ```sh
-pnpm add @avro-effect/schema effect
+pnpm add @effect-avro/schema effect
 ```
 
-Use `@avro-effect/core` directly when you only need Avro binary encoding and decoding:
+Use `@effect-avro/core` directly when you only need Avro binary encoding and decoding:
 
 ```sh
-pnpm add @avro-effect/core effect
+pnpm add @effect-avro/core effect
 ```
 
 Use the companion packages when integrating with Schema Registry, Kafka, or Node object-container files:
 
 ```sh
-pnpm add @avro-effect/schema-registry @avro-effect/kafka @avro-effect/node effect
+pnpm add @effect-avro/schema-registry @effect-avro/kafka @effect-avro/node effect
 ```
 
 ## Effect Schema Codec
 
 ```ts
 import { Schema } from "effect"
-import { avro, Long } from "@avro-effect/schema"
+import { avro, Long } from "@effect-avro/schema"
 
 class User extends Schema.Class<User>("User")({
   id: Long,
@@ -53,18 +53,18 @@ const buffer = encode(new User({ id: 1, name: "Ada" }))
 const user = decode(buffer)
 ```
 
-`@avro-effect/schema` can:
+`@effect-avro/schema` can:
 
 - compile Effect Schema v4 schemas to Avro JSON schemas
 - import Avro JSON schemas as Effect schemas
-- encode and decode Avro binary buffers through the native `@avro-effect/core` runtime
+- encode and decode Avro binary buffers through the native `@effect-avro/core` runtime
 - handle records, enums, arrays, maps, unions, nullable fields, recursive named references, bytes, fixed values, and logical type annotations
 - omit `_tag` literal fields from Avro records and restore them after decoding tagged Effect unions
 
 ## Native Avro Runtime
 
 ```ts
-import { decode, encode } from "@avro-effect/core"
+import { decode, encode } from "@effect-avro/core"
 
 const schema = {
   type: "record",
@@ -79,13 +79,13 @@ const bytes = encode(schema, { id: 1, name: "created" })
 const value = decode(schema, bytes)
 ```
 
-`@avro-effect/core` is intentionally small and dependency-light. It replaces the previous `avro-js` runtime path for the schema package and exposes plain Avro union values rather than wrapper objects.
+`@effect-avro/core` is intentionally small and dependency-light. It replaces the previous `avro-js` runtime path for the schema package and exposes plain Avro union values rather than wrapper objects.
 
 ## Integrations
 
-- `@avro-effect/schema-registry` handles Confluent Schema Registry HTTP APIs, schema id framing, and subject naming strategies.
-- `@avro-effect/kafka` composes the registry package into Kafka key/value serializer and deserializer functions without depending on a Kafka client.
-- `@avro-effect/node` reads and writes Avro object-container files with `null` and `deflate` codecs.
+- `@effect-avro/schema-registry` handles Confluent Schema Registry HTTP APIs, schema id framing, and subject naming strategies.
+- `@effect-avro/kafka` composes the registry package into Kafka key/value serializer and deserializer functions without depending on a Kafka client.
+- `@effect-avro/node` reads and writes Avro object-container files with `null` and `deflate` codecs.
 
 Public data models are exported as Effect Schema values plus matching types, for example `AvroSchema`, `RegisterSchemaRequest`, `KafkaMessage`, and `ContainerEncodeOptions`.
 
@@ -93,8 +93,8 @@ The integration packages expose Effect services as their primary API:
 
 ```ts
 import { Effect, Layer } from "effect"
-import { SchemaRegistry } from "@avro-effect/schema-registry"
-import { KafkaAvro, decodeValue, serializeRegistryValue } from "@avro-effect/kafka"
+import { SchemaRegistry } from "@effect-avro/schema-registry"
+import { KafkaAvro, decodeValue, serializeRegistryValue } from "@effect-avro/kafka"
 
 const RegistryLive = SchemaRegistry.layer({
   endpoint: "http://localhost:8081"

@@ -1,12 +1,12 @@
 {
-  "name": "@avro-effect/kafka",
+  "name": "@effect-avro/kafka",
   "version": "0.0.2",
   "type": "module",
   "license": "MIT",
-  "description": "Kafka serializers and deserializers for avro-effect packages",
+  "description": "Kafka serializers and deserializers for @effect-avro packages",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joepjoosten/avro-effect.git",
+    "url": "https://github.com/joepjoosten/effect-avro.git",
     "directory": "packages/kafka"
   },
   "exports": {
@@ -34,8 +34,8 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@avro-effect/core": "workspace:^",
-    "@avro-effect/schema-registry": "workspace:^"
+    "@effect-avro/core": "workspace:^",
+    "@effect-avro/schema-registry": "workspace:^"
   },
   "peerDependencies": {
     "effect": "4.0.0-beta.99"

@@ -1,4 +1,4 @@
-# @avro-effect/node
+# @effect-avro/node
 
 ## 0.0.1
 

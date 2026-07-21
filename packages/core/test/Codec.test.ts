@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/vitest"
 import { Effect } from "effect"
 import { decode, encode, encodeEffect, parse } from "../src/index.js"
 
-describe("@avro-effect/core", () => {
+describe("@effect-avro/core", () => {
   it("encodes and decodes primitives", () => {
     expect(decode("null", encode("null", null))).toEqual(null)
     expect(decode("boolean", encode("boolean", true))).toEqual(true)
