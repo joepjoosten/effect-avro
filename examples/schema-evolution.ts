@@ -29,7 +29,7 @@ export const OrderEventV2AvroSchema = toAvroSchema(OrderEventV2, {
 }) as AvroSchema
 
 export class IncompatibleOrderEventSchema
-  extends Schema.TaggedErrorClass<IncompatibleOrderEventSchema>()("IncompatibleOrderEventSchema", {
+  extends Schema.TaggedError<IncompatibleOrderEventSchema>()("IncompatibleOrderEventSchema", {
     subject: Schema.String
   })
 {}

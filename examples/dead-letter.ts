@@ -15,7 +15,7 @@ export const DeadLetterMessage = Schema.Struct({
 export type DeadLetterMessage = typeof DeadLetterMessage.Type
 
 export class UnknownOrderEventFailure
-  extends Schema.TaggedErrorClass<UnknownOrderEventFailure>()("UnknownOrderEventFailure", {
+  extends Schema.TaggedError<UnknownOrderEventFailure>()("UnknownOrderEventFailure", {
     cause: Schema.Defect()
   })
 {}

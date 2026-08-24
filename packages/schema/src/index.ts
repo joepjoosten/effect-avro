@@ -1,5 +1,5 @@
 import * as Avro from "@effect-avro/core"
-import { Effect, Option, Schema, SchemaAST, SchemaIssue, SchemaTransformation } from "effect"
+import { Effect, Schema, SchemaAST, SchemaIssue, SchemaTransformation } from "effect"
 
 export const AvroTypeAnnotationId = "@effect-avro/schema/type"
 export const AvroNameAnnotationId = "@effect-avro/schema/name"
@@ -107,7 +107,7 @@ export const avroAnnotations = (annotations: Record<string, unknown>) =>
   <S extends Schema.Constraint>(schema: S): S =>
     Schema.annotate(annotations)(schema as unknown as Schema.Top) as unknown as S
 
-class AvroSchemaError extends Schema.TaggedErrorClass<AvroSchemaError>()("AvroSchemaError", {
+class AvroSchemaError extends Schema.TaggedError<AvroSchemaError>()("AvroSchemaError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}
@@ -200,7 +200,7 @@ export const fromAvroSchema = (
 }
 
 const avroIssue = (input: unknown, text: string) =>
-  new SchemaIssue.InvalidValue(Option.some(input), { message: text })
+  new SchemaIssue.InvalidValue({ message: text }, input)
 
 const avroSchemaError = (message: string, cause?: unknown): AvroSchemaError =>
   cause === undefined ? new AvroSchemaError({ message }) : new AvroSchemaError({ message, cause })
@@ -528,8 +528,7 @@ const hasIntCheck = (ast: SchemaAST.AST): boolean => {
   }
   const visit = (check: SchemaAST.Check<unknown>): boolean => {
     if (check._tag === "Filter") {
-      const tag = String(check.annotations?.meta?._tag)
-      return tag === "isInt" || tag === "isInt32" || tag === "isUint32"
+      return check.annotations?.representation?.id === "effect/schema/isInt"
     }
     return check.checks.some(visit)
   }

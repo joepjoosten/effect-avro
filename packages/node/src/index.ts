@@ -41,7 +41,7 @@ export type ContainerFile<A = unknown> = {
   readonly values: ReadonlyArray<A>
 }
 
-export class AvroContainerError extends Schema.TaggedErrorClass<AvroContainerError>()("AvroContainerError", {
+export class AvroContainerError extends Schema.TaggedError<AvroContainerError>()("AvroContainerError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}

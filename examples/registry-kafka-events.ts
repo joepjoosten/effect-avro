@@ -20,11 +20,11 @@ import {
 } from "./domain.js"
 import { makeInMemorySchemaRegistry } from "./support/in-memory-registry.js"
 
-export class MissingKafkaValue extends Schema.TaggedErrorClass<MissingKafkaValue>()("MissingKafkaValue", {
+export class MissingKafkaValue extends Schema.TaggedError<MissingKafkaValue>()("MissingKafkaValue", {
   topic: Schema.String
 }) {}
 
-export class OrderEventDecodeError extends Schema.TaggedErrorClass<OrderEventDecodeError>()("OrderEventDecodeError", {
+export class OrderEventDecodeError extends Schema.TaggedError<OrderEventDecodeError>()("OrderEventDecodeError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}
