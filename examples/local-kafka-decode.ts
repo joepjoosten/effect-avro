@@ -7,7 +7,7 @@ import { decodeOrderMessage, encodeOrderMessage, type MissingKafkaValue, type Or
 import { SelfManagedKafkaRecord } from "./lambda-kafka-dedupe.js"
 import { makeInMemorySchemaRegistry } from "./support/in-memory-registry.js"
 
-export class Base64KafkaDecodeError extends Schema.TaggedErrorClass<Base64KafkaDecodeError>()(
+export class Base64KafkaDecodeError extends Schema.TaggedError<Base64KafkaDecodeError>()(
   "Base64KafkaDecodeError",
   {
     message: Schema.String,

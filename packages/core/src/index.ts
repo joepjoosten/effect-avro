@@ -149,7 +149,7 @@ export const AvroSchema: Schema.Schema<AvroSchema> = Schema.suspend(() =>
 
 type AvroObjectSchema = Exclude<AvroSchema, string | AvroUnionSchema>
 
-export class AvroError extends Schema.TaggedErrorClass<AvroError>()("AvroError", {
+export class AvroError extends Schema.TaggedError<AvroError>()("AvroError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}

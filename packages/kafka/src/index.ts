@@ -17,7 +17,7 @@ export type KafkaMessage = typeof KafkaMessage.Type
 
 export type KafkaPayloadLocation = "key" | "value"
 
-export class KafkaAvroError extends Schema.TaggedErrorClass<KafkaAvroError>()("KafkaAvroError", {
+export class KafkaAvroError extends Schema.TaggedError<KafkaAvroError>()("KafkaAvroError", {
   message: Schema.String,
   topic: Schema.optional(Schema.String),
   partition: Schema.optional(Schema.Number),

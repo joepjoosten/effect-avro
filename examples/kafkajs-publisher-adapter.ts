@@ -95,12 +95,12 @@ export const CollectedKafkaSend = Schema.Union([
 ])
 export type CollectedKafkaSend = typeof CollectedKafkaSend.Type
 
-export class KafkaProducerError extends Schema.TaggedErrorClass<KafkaProducerError>()("KafkaProducerError", {
+export class KafkaProducerError extends Schema.TaggedError<KafkaProducerError>()("KafkaProducerError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}
 
-export class OrderEventEncodeError extends Schema.TaggedErrorClass<OrderEventEncodeError>()("OrderEventEncodeError", {
+export class OrderEventEncodeError extends Schema.TaggedError<OrderEventEncodeError>()("OrderEventEncodeError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}

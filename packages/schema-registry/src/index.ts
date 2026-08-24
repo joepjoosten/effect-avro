@@ -86,12 +86,12 @@ export class SchemaRegistry extends Context.Service<SchemaRegistry, SchemaRegist
     )
 }
 
-export class SchemaRegistryError extends Schema.TaggedErrorClass<SchemaRegistryError>()("SchemaRegistryError", {
+export class SchemaRegistryError extends Schema.TaggedError<SchemaRegistryError>()("SchemaRegistryError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Defect())
 }) {}
 
-export class SchemaRegistryHttpError extends Schema.TaggedErrorClass<SchemaRegistryHttpError>()(
+export class SchemaRegistryHttpError extends Schema.TaggedError<SchemaRegistryHttpError>()(
   "SchemaRegistryHttpError",
   {
     message: Schema.String,
@@ -100,7 +100,7 @@ export class SchemaRegistryHttpError extends Schema.TaggedErrorClass<SchemaRegis
   }
 ) {}
 
-export class InvalidRegistryFrame extends Schema.TaggedErrorClass<InvalidRegistryFrame>()("InvalidRegistryFrame", {
+export class InvalidRegistryFrame extends Schema.TaggedError<InvalidRegistryFrame>()("InvalidRegistryFrame", {
   message: Schema.String
 }) {}
 
