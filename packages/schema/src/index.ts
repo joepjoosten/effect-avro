@@ -11,6 +11,8 @@ export const AvroPrecisionAnnotationId = "@effect-avro/schema/precision"
 export const AvroScaleAnnotationId = "@effect-avro/schema/scale"
 export const AvroFixedSizeAnnotationId = "@effect-avro/schema/fixedSize"
 export const AvroFieldOrderAnnotationId = "@effect-avro/schema/fieldOrder"
+const OriginalAvroSchemaAnnotationId = "@effect-avro/schema/original"
+
 export const EffectTagMetadataKey = "x-effect-tag"
 
 export const AvroPrimitive = Avro.AvroPrimitive
@@ -196,7 +198,9 @@ export const fromAvroSchema = (
     namespace: options.namespace,
     schemas: new Map()
   }
-  return buildEffectSchema(schema, ctx) as Schema.Codec<unknown, unknown, never, never>
+  return Schema.annotate({ [OriginalAvroSchemaAnnotationId]: schema })(
+    buildEffectSchema(schema, ctx) as Schema.Top
+  ) as Schema.Codec<unknown, unknown, never, never>
 }
 
 const avroIssue = (input: unknown, text: string) =>
@@ -213,6 +217,8 @@ const schemaIdentifier = (schema: Schema.Constraint): string | undefined => {
 }
 
 const compileAst = (ast: SchemaAST.AST, state: CompileState, path: ReadonlyArray<string>): AvroSchema => {
+  const original = SchemaAST.resolveAt<AvroSchema>(OriginalAvroSchemaAnnotationId)(ast)
+  if (original !== undefined) return compileImported(original, state, state.options.namespace)
   const annotatedType = SchemaAST.resolveAt<string>(AvroTypeAnnotationId)(ast)
   if (annotatedType !== undefined) {
     return compileAnnotatedType(ast, annotatedType, state, path)
@@ -399,6 +405,10 @@ const compileObjectAst = (
   }
   state.astByName.set(name.fullName, ast)
 
+  const childState: CompileState = {
+    ...state,
+    options: { ...state.options, ...(name.namespace === undefined ? {} : { namespace: name.namespace }) }
+  }
   let tag: string | undefined
   const fields: Array<AvroRecordField> = []
   for (const property of ast.propertySignatures) {
@@ -414,7 +424,7 @@ const compileObjectAst = (
       tag = property.type.literal
       continue
     }
-    fields.push(compileField(property.name, property.type, state, [...path, property.name]))
+    fields.push(compileField(property.name, property.type, childState, [...path, property.name]))
   }
 
   const schema: AvroRecordSchema = {
@@ -571,7 +581,7 @@ const resolveName = (
   if (annotatedName === undefined && identifier === undefined && title === undefined) {
     const base = name
     let suffix = 2
-    while (state.astByName.has(fullName(name, namespace)) && state.astByName.get(fullName(name, namespace)) !== ast) {
+    while ((state.schemas.has(fullName(name, namespace)) || state.astByName.has(fullName(name, namespace))) && state.names.get(ast) !== fullName(name, namespace)) {
       name = `${base}_${suffix++}`
     }
   }
@@ -942,7 +952,7 @@ const buildRecordSchema = (schema: AvroRecordSchema, ctx: FromAvroContext): Sche
       namespace: splitName(name).namespace,
       schemas: ctx.schemas
     })
-    setOwn(fields, field.name, field.default === undefined ? fieldSchema : Schema.optionalKey(fieldSchema))
+    setOwn(fields, field.name, field["x-effect-optional"] === true ? Schema.optionalKey(fieldSchema) : fieldSchema)
   }
 
   const struct = Schema.Struct(fields).annotate({
@@ -995,4 +1005,28 @@ const registerImported = (schema: AvroNamedSchema, ctx: FromAvroContext, value: 
   ctx.schemas.set(name, value)
   for (const alias of schema.aliases ?? []) ctx.schemas.set(fullName(alias, splitName(name).namespace), value)
   return value
+}
+
+const compileImported = (schema: AvroSchema, state: CompileState, namespace?: string): AvroSchema => {
+  if (typeof schema === "string") return schema
+  if (Array.isArray(schema)) return schema.map((member) => compileImported(member, state, namespace))
+  const concrete = normalizeObjectType(schema)
+  if (isNamedSchema(concrete)) {
+    const name = fullName(concrete.name, concrete.namespace ?? namespace)
+    const existing = state.schemas.get(name)
+    if (existing !== undefined) {
+      if (JSON.stringify(existing) !== JSON.stringify(schema)) throw avroSchemaError(`Conflicting Avro name ${name}`)
+      return name
+    }
+    state.schemas.set(name, schema)
+    if (concrete.type === "record" || concrete.type === "error") {
+      return { ...concrete, fields: concrete.fields.map((field: AvroRecordField) => ({
+        ...field, type: compileImported(field.type, state, splitName(name).namespace)
+      })) }
+    }
+    return schema
+  }
+  if (concrete.type === "array") return { ...concrete, items: compileImported(concrete.items, state, namespace) }
+  if (concrete.type === "map") return { ...concrete, values: compileImported(concrete.values, state, namespace) }
+  return schema
 }
