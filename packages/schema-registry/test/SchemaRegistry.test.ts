@@ -166,3 +166,37 @@ it.effect("keys registration caches by normalized references and reads caches la
   expect((yield* client.getId({ ...base, references: [...references].reverse() })).id).toBe(registered.id)
   expect(calls).toBe(4)
 }))
+
+it.effect("resolves transitive references and caches exact subject versions", () => Effect.gen(function*() {
+  const root = { type: "record", name: "Root", fields: [{ name: "outer", type: "Outer" }] } as const
+  const outer = { type: "record", name: "Outer", fields: [{ name: "leaf", type: "Leaf" }] } as const
+  const leaf = { type: "enum", name: "Leaf", symbols: ["X"] } as const
+  const references = [{ name: "Outer", subject: "outer", version: 1 }]
+  const paths: string[] = []
+  const client = makeClient({ endpoint: "http://test", fetch: async (url) => {
+    const path = new URL(url).pathname
+    paths.push(path)
+    if (path === "/subjects/s/versions") return json({ id: 1 })
+    if (path === "/subjects/outer/versions/1") return json({ id: 2, schema: JSON.stringify(outer), references: [{ name: "Leaf", subject: "leaf", version: 2 }] })
+    if (path === "/subjects/leaf/versions/2") return json({ id: 3, schema: JSON.stringify(leaf) })
+    return new Response("missing", { status: 404 })
+  } })
+  const value = { outer: { leaf: "X" } }
+  const bytes = yield* encodeWithRegistry(client, { subject: "s", schema: root, references, value })
+  expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
+  expect(paths).toEqual(["/subjects/s/versions", "/subjects/outer/versions/1", "/subjects/leaf/versions/2"])
+}))
+
+it.effect("resolves cyclic named dependencies without recursive fetching", () => Effect.gen(function*() {
+  const a = { type: "record", name: "A", fields: [{ name: "next", type: ["null", "B"] }] } as const
+  const b = { type: "record", name: "B", fields: [{ name: "next", type: ["null", "A"] }] } as const
+  const client = makeClient({ endpoint: "http://test", fetch: async (url) => {
+    const path = new URL(url).pathname
+    if (path === "/subjects/s/versions") return json({ id: 1 })
+    if (path === "/subjects/b/versions/1") return json({ id: 2, schema: JSON.stringify(b), references: [{ name: "A", subject: "a", version: 1 }] })
+    return json({ id: 1, schema: JSON.stringify(a), references: [{ name: "B", subject: "b", version: 1 }] })
+  } })
+  const value = { next: { next: null } }
+  const bytes = yield* encodeWithRegistry(client, { subject: "s", schema: a, references: [{ name: "B", subject: "b", version: 1 }], value })
+  expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
+}))
