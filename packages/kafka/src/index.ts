@@ -117,7 +117,9 @@ export const decodeMessagePayload = <A = unknown>(
     if (payload === null || payload === undefined) {
       return yield* Effect.fail(kafkaAvroError(`Kafka message ${location} is empty`, messageContext(message, location)))
     }
-    return yield* Registry.decodeWithRegistry<A>(client, payload, options)
+    return yield* Registry.decodeWithRegistry<A>(client, payload, options).pipe(
+      Effect.mapError((error) => kafkaAvroError(error.message, { ...messageContext(message, location), cause: error }))
+    )
   })
 
 export const decodeMessageKey = <A = unknown>(
