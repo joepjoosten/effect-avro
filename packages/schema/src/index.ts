@@ -60,6 +60,7 @@ export const FromAvroOptions = Schema.Struct({
 export type FromAvroOptions = typeof FromAvroOptions.Type
 
 export const AvroCodecOptions = Schema.Struct({
+  limits: Schema.optionalKey(Avro.DecodeLimits),
   name: Schema.optionalKey(Schema.String),
   namespace: Schema.optionalKey(Schema.String),
   omitTags: Schema.optionalKey(Schema.Boolean),
@@ -154,7 +155,7 @@ export const compileAvro = <S extends Schema.Constraint>(
   const avroSchema = options.avroSchema ?? toAvroSchema(schema, options)
   return {
     schema: avroSchema,
-    type: Avro.parse(avroSchema as Avro.AvroSchema, { restoreTags: true })
+    type: Avro.parse(avroSchema as Avro.AvroSchema, { restoreTags: true, ...(options.limits === undefined ? {} : { limits: options.limits }) })
   }
 }
 

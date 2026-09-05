@@ -234,3 +234,12 @@ it("preserves imported defaults, logical types and metadata when recompiling", (
   expect(toAvroSchema(fromAvroSchema({ type: "int", logicalType: "date" }))).toEqual({ type: "int", logicalType: "date" })
   expect(toAvroSchema(Schema.Struct({ embedded: imported }))).toMatchObject({ fields: [{ type: schema }] })
 })
+
+it("exposes decode budget overrides through the schema codec", () => {
+  const source = Schema.Array(Schema.String)
+  const limited = avro(source, { limits: { maxValues: 2 } })
+  const expanded = avro(source, { limits: { maxValues: 3 } })
+  const bytes = Schema.encodeSync(expanded)(["a", "b"])
+  expect(() => Schema.decodeUnknownSync(limited)(bytes)).toThrow("maxValues")
+  expect(Schema.decodeUnknownSync(expanded)(bytes)).toEqual(["a", "b"])
+})
