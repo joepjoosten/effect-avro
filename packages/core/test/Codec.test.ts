@@ -75,3 +75,19 @@ describe("@effect-avro/core", () => {
       })
     ))
 })
+
+it("validates nested data before choosing record union branches", () => {
+  const type = parse([
+    { type: "record", name: "Numbers", fields: [{ name: "v", type: { type: "array", items: "int" } }] },
+    { type: "record", name: "Strings", fields: [{ name: "v", type: { type: "array", items: "string" } }] }
+  ])
+  expect(type.fromBuffer(type.toBuffer({ v: ["ok"] }))).toEqual({ v: ["ok"] })
+  expect(type.isValid({ v: [false] })).toBe(false)
+  expect(parse({ type: "map", values: "int" }).isValid({ x: "bad" })).toBe(false)
+  const tree = parse({ type: "record", name: "Tree", fields: [{ name: "children", type: { type: "array", items: "Tree" } }] })
+  const cyclic: { children: unknown[] } = { children: [] }
+  cyclic.children.push(cyclic)
+  expect(tree.isValid(cyclic)).toBe(false)
+  const leaf = { children: [] }
+  expect(tree.isValid({ children: [leaf, leaf] })).toBe(true)
+})
