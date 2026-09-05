@@ -443,6 +443,8 @@ const compileField = (
   return {
     name,
     type,
+    ...(optional && !(Array.isArray(compiled) ? compiled : [compiled]).some((member) => branchName(member) === "null")
+      ? { "x-effect-optional": true } : {}),
     ...(doc === undefined ? {} : { doc }),
     ...(aliases === undefined ? {} : { aliases }),
     ...(order === undefined ? {} : { order }),
@@ -665,6 +667,7 @@ const fromAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRe
       }
       const out: Record<string, unknown> = {}
       for (const field of concrete.fields) {
+        if (field["x-effect-optional"] === true && value[field.name] === null) continue
         out[field.name] = fromAvroRuntime(value[field.name], field.type, registry)
       }
       const tag = concrete[EffectTagMetadataKey]
@@ -687,7 +690,8 @@ const fromAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRe
 const toAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRegistry): unknown => {
   const resolved = resolveRuntimeSchema(schema, registry)
   if (Array.isArray(resolved)) {
-    return value
+    const branch = resolved.find((member) => matchesAvro(member, value, registry))
+    return branch === undefined ? value : toAvroRuntime(value, branch, registry)
   }
   if (typeof resolved === "string") {
     return primitiveToAvroRuntime(value, resolved)
@@ -702,8 +706,10 @@ const toAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRegi
       }
       const out: Record<string, unknown> = {}
       for (const field of concrete.fields) {
-        out[field.name] = toAvroRuntime(value[field.name], field.type, registry)
+        const item = value[field.name] === undefined && field.default === null ? null : value[field.name]
+        out[field.name] = toAvroRuntime(item, field.type, registry)
       }
+      if (concrete[EffectTagMetadataKey] !== undefined) out._tag = value._tag
       return out
     }
     case "array":
