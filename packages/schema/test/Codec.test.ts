@@ -153,3 +153,12 @@ it("keeps same-named records in separate namespaces through the schema adapter",
   const value = { first: { x: 1 }, other: { x: "other" }, again: { x: 2 } }
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
+
+it("preserves special record keys through imported codecs", () => {
+  const schema = { type: "record", name: "Special", fields: [{ name: "__proto__", type: "string" }] } as const
+  const codec = avro(fromAvroSchema(schema), { avroSchema: schema })
+  const value = JSON.parse('{"__proto__":"data"}')
+  const result = Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))
+  expect(Object.hasOwn(result as object, "__proto__")).toBe(true)
+  expect(JSON.stringify(result)).toBe(JSON.stringify(value))
+})
