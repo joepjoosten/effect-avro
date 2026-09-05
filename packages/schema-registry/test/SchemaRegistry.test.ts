@@ -200,3 +200,20 @@ it.effect("resolves cyclic named dependencies without recursive fetching", () =>
   const bytes = yield* encodeWithRegistry(client, { subject: "s", schema: a, references: [{ name: "B", subject: "b", version: 1 }], value })
   expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
 }))
+
+it.effect("uses Confluent raw bytes only for top-level bytes schemas", () => Effect.gen(function*() {
+  for (const schema of ["bytes", { type: "bytes" }] as const) {
+    const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: 1 }) })
+    for (const value of [new Uint8Array(), new Uint8Array([1, 2, 3]), new Uint8Array([255, 0])]) {
+      const expected = new Uint8Array([0, 0, 0, 0, 1, ...value])
+      expect(yield* encodeWithRegistry(client, { subject: "s", schema, value })).toEqual(expected)
+      expect(yield* decodeWithRegistry(client, expected)).toEqual(value)
+    }
+  }
+  const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: 2 }) })
+  const frame = yield* encodeWithRegistry(client, {
+    subject: "record", schema: { type: "record", name: "R", fields: [{ name: "data", type: "bytes" }] },
+    value: { data: new Uint8Array([1, 2, 3]) }
+  })
+  expect([...frame.subarray(5)]).toEqual([6, 1, 2, 3])
+}))

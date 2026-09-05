@@ -344,7 +344,7 @@ export const encodeWithRegistry = <A>(
     const registered = yield* (options.autoRegister === false ? client.getId(options) : client.register(options))
     const definitions = yield* resolveDefinitions(client, registered)
     return yield* Effect.try({
-      try: () => encodeConfluentFrame(registered.id, Avro.encode(options.schema, options.value, { ...options.parseOptions, definitions: [...(options.parseOptions?.definitions ?? []), ...definitions] })),
+      try: () => encodeConfluentFrame(registered.id, encodeRegistryPayload(options.schema, options.value, { ...options.parseOptions, definitions: [...(options.parseOptions?.definitions ?? []), ...definitions] })),
       catch: registryOrAvroError
     })
   })
@@ -367,7 +367,7 @@ export const decodeWithRegistry = <A = unknown>(
     const registered = yield* client.getById(frame.schemaId)
     const definitions = yield* resolveDefinitions(client, registered)
     return yield* Effect.try({
-      try: () => Avro.decode<A>(registered.schema, frame.payload, { ...options, definitions: [...(options?.definitions ?? []), ...definitions] }),
+      try: () => isBytesSchema(registered.schema) ? frame.payload as A : Avro.decode<A>(registered.schema, frame.payload, { ...options, definitions: [...(options?.definitions ?? []), ...definitions] }),
       catch: registryOrAvroError
     })
   })
@@ -599,3 +599,13 @@ const resolveDefinitions = (
   for (const reference of root.references) yield* visit(reference)
   return definitions
 })
+
+const isBytesSchema = (schema: Avro.AvroSchema): boolean =>
+  typeof schema === "string" ? schema === "bytes" : !Array.isArray(schema) &&
+    isBytesSchema((schema as Exclude<Avro.AvroSchema, string | Avro.AvroUnionSchema>).type)
+
+const encodeRegistryPayload = (schema: Avro.AvroSchema, value: unknown, options: Avro.ParseOptions): Uint8Array => {
+  if (!isBytesSchema(schema)) return Avro.encode(schema, value, options)
+  if (!(value instanceof Uint8Array)) throw new Avro.AvroError({ message: "Expected Avro bytes to be Uint8Array" })
+  return value
+}
