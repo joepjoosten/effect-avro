@@ -166,3 +166,15 @@ it("bounds zero-width collections, nesting and partial decoding work", () => {
   expect(() => decode("null", new Uint8Array(), { limits: { maxValues: NaN } })).toThrow("Invalid decode limit")
   expect(() => decode({ type: "array", items: "int" }, new Uint8Array([1, 0, 2, 0]))).toThrow("block size mismatch")
 })
+
+it("rejects invalid fixed sizes and partial-decode offsets before reading", () => {
+  for (const size of [-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    expect(() => parse({ type: "fixed", name: "F", size })).toThrow("Invalid Avro fixed size")
+  }
+  const type = parse("boolean")
+  for (const offset of [-1, 0.5, NaN, Infinity, 2]) {
+    expect(() => type.decodePartial(new Uint8Array([1]), offset)).toThrow("Invalid Avro decode offset")
+  }
+  expect(parse({ type: "fixed", name: "Empty", size: 0 }).decodePartial(new Uint8Array())).toEqual({ value: new Uint8Array(), offset: 0 })
+  expect(parse("null").decodePartial(new Uint8Array([1]), 1)).toEqual({ value: null, offset: 1 })
+})
