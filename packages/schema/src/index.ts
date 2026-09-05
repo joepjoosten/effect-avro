@@ -152,7 +152,7 @@ export const compileAvro = <S extends Schema.Constraint>(
   const avroSchema = options.avroSchema ?? toAvroSchema(schema, options)
   return {
     schema: avroSchema,
-    type: Avro.parse(avroSchema as Avro.AvroSchema)
+    type: Avro.parse(avroSchema as Avro.AvroSchema, { restoreTags: true })
   }
 }
 

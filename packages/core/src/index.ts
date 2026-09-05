@@ -179,7 +179,8 @@ export type DecodeResult<A = unknown> = {
 }
 
 export const ParseOptions = Schema.Struct({
-  namespace: Schema.optionalKey(Schema.String)
+  namespace: Schema.optionalKey(Schema.String),
+  restoreTags: Schema.optionalKey(Schema.Boolean)
 })
 export type ParseOptions = typeof ParseOptions.Type
 
@@ -238,7 +239,7 @@ export const parse = <A = unknown>(schema: AvroSchema, options: ParseOptions = {
       return writer.toUint8Array()
     },
     fromUint8Array: (input) => {
-      const reader = new BinaryReader(input)
+      const reader = new BinaryReader(input, 0, options.restoreTags)
       const value = readNode(resolveNode(node), reader) as A
       if (!reader.done) {
         throw avroError(`Trailing Avro data at offset ${reader.offset}`)
@@ -252,7 +253,7 @@ export const parse = <A = unknown>(schema: AvroSchema, options: ParseOptions = {
       return api.fromUint8Array(input)
     },
     decodePartial: (input, offset = 0) => {
-      const reader = new BinaryReader(input, offset)
+      const reader = new BinaryReader(input, offset, options.restoreTags)
       return {
         value: readNode(resolveNode(node), reader) as A,
         offset: reader.offset
@@ -474,6 +475,9 @@ const readNode = (node: Node, reader: BinaryReader): unknown => {
       const out: Record<string, unknown> = {}
       for (const field of node.fields) {
         out[field.name] = readNode(field.node, reader)
+      }
+      if (reader.restoreTags && typeof node.schema["x-effect-tag"] === "string") {
+        out._tag = node.schema["x-effect-tag"]
       }
       return out
     }
@@ -724,7 +728,7 @@ class BinaryReader {
   readonly buffer: Uint8Array
   offset: number
 
-  constructor(buffer: Uint8Array, offset = 0) {
+  constructor(buffer: Uint8Array, offset = 0, readonly restoreTags = false) {
     this.buffer = buffer
     this.offset = offset
   }
