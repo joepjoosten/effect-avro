@@ -612,39 +612,49 @@ const writeNode = (node: Node, value: unknown, writer: BinaryWriter): void => {
   }
 }
 
-const matchesNode = (node: Node, value: unknown): boolean => {
+const matchesNode = (node: Node, value: unknown, active = new Map<Node, Set<unknown>>()): boolean => {
   node = resolveNode(node)
-  switch (node._tag) {
-    case "null":
-      return value === null
-    case "boolean":
-      return typeof value === "boolean"
-    case "int":
-      return Number.isInteger(value)
-    case "long":
-    case "float":
-    case "double":
-      return typeof value === "number" && Number.isFinite(value)
-    case "bytes":
-      return value instanceof Uint8Array
-    case "fixed":
-      return value instanceof Uint8Array && value.byteLength === node.size
-    case "string":
-      return typeof value === "string"
-    case "enum":
-      return typeof value === "string" && node.symbols.includes(value)
-    case "array":
-      return Array.isArray(value)
-    case "map":
-      return isRecordLike(value)
-    case "record":
-      return isRecordLike(value) &&
-        tagMatches(node, value) &&
-        node.fields.every((field) => Object.hasOwn(value, field.name) || field.hasDefault)
-    case "union":
-      return node.branches.some((branch) => matchesNode(branch, value))
-    case "ref":
-      return matchesNode(resolveNode(node), value)
+  const values = active.get(node) ?? new Set<unknown>()
+  if (values.has(value)) return false
+  active.set(node, values)
+  values.add(value)
+  try {
+    switch (node._tag) {
+      case "null":
+        return value === null
+      case "boolean":
+        return typeof value === "boolean"
+      case "int":
+        return Number.isInteger(value)
+      case "long":
+      case "float":
+      case "double":
+        return typeof value === "number" && Number.isFinite(value)
+      case "bytes":
+        return value instanceof Uint8Array
+      case "fixed":
+        return value instanceof Uint8Array && value.byteLength === node.size
+      case "string":
+        return typeof value === "string"
+      case "enum":
+        return typeof value === "string" && node.symbols.includes(value)
+      case "array":
+        return Array.isArray(value) && value.every((item) => matchesNode(node.item, item, active))
+      case "map":
+        return isRecordLike(value) && Object.values(value).every((item) => matchesNode(node.value, item, active))
+      case "record":
+        return isRecordLike(value) &&
+          tagMatches(node, value) &&
+          node.fields.every((field) =>
+            (Object.hasOwn(value, field.name) || field.hasDefault) &&
+            matchesNode(field.node, Object.hasOwn(value, field.name) ? value[field.name] : field.defaultValue, active))
+      case "union":
+        return node.branches.some((branch) => matchesNode(branch, value, active))
+      case "ref":
+        return matchesNode(resolveNode(node), value, active)
+    }
+  } finally {
+    values.delete(value)
   }
 }
 
