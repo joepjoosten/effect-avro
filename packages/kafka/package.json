@@ -1,6 +1,6 @@
 {
   "name": "@effect-avro/kafka",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "license": "MIT",
   "description": "Kafka serializers and deserializers for @effect-avro packages",
