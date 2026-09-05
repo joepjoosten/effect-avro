@@ -889,16 +889,18 @@ const buildEffectSchema = (schema: AvroSchema, ctx: FromAvroContext): Schema.Con
     case "error":
       return buildRecordSchema(concrete, ctx)
     case "enum":
-      return Schema.Literals(concrete.symbols).annotate({
+      return registerImported(concrete, ctx, Schema.Literals(concrete.symbols).annotate({
         identifier: concrete.name,
+        [AvroNameAnnotationId]: concrete.name,
+        [AvroNamespaceAnnotationId]: concrete.namespace ?? ctx.namespace,
         ...(concrete.doc === undefined ? {} : { description: concrete.doc })
-      })
+      }))
     case "array":
       return Schema.Array(buildEffectSchema(concrete.items, ctx))
     case "map":
       return Schema.Record(Schema.String, buildEffectSchema(concrete.values, ctx))
     case "fixed":
-      return Fixed(concrete.name, concrete.size, concrete.namespace)
+      return registerImported(concrete, ctx, Fixed(concrete.name, concrete.size, concrete.namespace ?? ctx.namespace))
     default:
       return primitiveOrRef(concrete.type, ctx)
   }
@@ -977,4 +979,11 @@ const primitiveOrRef = (name: string, ctx: FromAvroContext): Schema.Constraint =
 
 const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
   Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
+}
+
+const registerImported = (schema: AvroNamedSchema, ctx: FromAvroContext, value: Schema.Constraint): Schema.Constraint => {
+  const name = fullName(schema.name, schema.namespace ?? ctx.namespace)
+  ctx.schemas.set(name, value)
+  for (const alias of schema.aliases ?? []) ctx.schemas.set(fullName(alias, splitName(name).namespace), value)
+  return value
 }
