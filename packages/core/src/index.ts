@@ -128,7 +128,7 @@ export const AvroFixedSchema: Schema.Codec<AvroFixedSchema> = Schema.StructWithR
   name: Schema.String,
   namespace: Schema.optionalKey(Schema.String),
   aliases: Schema.optionalKey(Schema.Array(Schema.String)),
-  size: Schema.Number,
+  size: Schema.Number.check(Schema.isInt(), Schema.isBetween({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER })),
   logicalType: Schema.optionalKey(Schema.String)
 }), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroFixedSchema>
 
@@ -437,6 +437,9 @@ const compile = (schema: AvroSchema, registry: Registry, namespace: string | und
     }
     case "fixed": {
       const fixedSchema = objectSchema as AvroFixedSchema
+      if (!Number.isSafeInteger(fixedSchema.size) || fixedSchema.size < 0) {
+        throw avroError(`Invalid Avro fixed size ${fixedSchema.size}`)
+      }
       const name = namedSchemaFullName(fixedSchema.name, fixedSchema.namespace ?? namespace)
       const existing = registry.nodes.get(name)
       if (existing !== undefined) {
@@ -818,6 +821,9 @@ class BinaryReader {
   offset: number
 
   constructor(buffer: Uint8Array, offset = 0, readonly restoreTags = false, readonly budget = new DecodeBudget()) {
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > buffer.length) {
+      throw avroError(`Invalid Avro decode offset ${offset}`)
+    }
     if (buffer.length > budget.limits.maxBytes) throw avroError("Avro decode maxBytes exceeded")
     this.buffer = buffer
     this.offset = offset
@@ -888,6 +894,7 @@ class BinaryReader {
   }
 
   private ensure(bytes: number) {
+    if (!Number.isSafeInteger(bytes) || bytes < 0) throw avroError(`Invalid Avro read size ${bytes}`)
     this.budget.consumeBytes(bytes)
     if (this.offset + bytes > this.buffer.length) {
       throw avroError("Truncated Avro buffer")
