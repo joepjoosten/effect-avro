@@ -341,7 +341,7 @@ const compile = (schema: AvroSchema, registry: Registry, namespace: string | und
       registerNamed(recordSchema, name, record, registry)
       record.fields = recordSchema.fields.map((field) => ({
         name: field.name,
-        node: compile(field.type, registry, recordSchema.namespace ?? namespace),
+        node: compile(field.type, registry, namespaceOf(name)),
         defaultValue: field.default,
         hasDefault: Object.hasOwn(field, "default")
       }))
@@ -405,10 +405,8 @@ const primitive = (type: AvroPrimitive, schema: AvroSchema): Node => {
 
 const registerNamed = (schema: AvroNamedSchema, name: string, node: Node, registry: Registry) => {
   registry.nodes.set(name, node)
-  registry.nodes.set(unqualified(name), node)
   for (const alias of schema.aliases ?? []) {
-    registry.aliases.set(alias, name)
-    registry.aliases.set(unqualified(alias), name)
+    registry.aliases.set(qualify(alias, namespaceOf(name)), name)
   }
 }
 
@@ -416,9 +414,8 @@ const resolveNode = (node: Node): Node => {
   if (node._tag !== "ref") {
     return node
   }
-  const alias = node.registry.aliases.get(node.name) ?? node.registry.aliases.get(unqualified(node.name))
+  const alias = node.registry.aliases.get(node.name)
   const resolved = node.registry.nodes.get(node.name) ??
-    node.registry.nodes.get(unqualified(node.name)) ??
     (alias === undefined ? undefined : node.registry.nodes.get(alias))
   if (resolved === undefined) {
     throw avroError(`Unknown Avro type reference ${node.name}`)
@@ -850,18 +847,18 @@ const isRecordLike = (value: unknown): value is Record<string, unknown> =>
 const message = (error: unknown): string => error instanceof Error ? error.message : String(error)
 
 const qualify = (name: string, namespace: string | undefined): string =>
-  name.includes(".") || namespace === undefined ? name : `${namespace}.${name}`
+  name.includes(".") || namespace === undefined || namespace === "" ? name : `${namespace}.${name}`
 
 const namedSchemaFullName = (name: string, namespace: string | undefined): string => {
   if (name.includes(".")) {
     return name
   }
-  return namespace === undefined ? name : `${namespace}.${name}`
+  return namespace === undefined || namespace === "" ? name : `${namespace}.${name}`
 }
 
-const unqualified = (name: string): string => {
+const namespaceOf = (name: string): string | undefined => {
   const index = name.lastIndexOf(".")
-  return index === -1 ? name : name.slice(index + 1)
+  return index === -1 ? undefined : name.slice(0, index)
 }
 
 const isAvroInt = (value: unknown): value is number =>
