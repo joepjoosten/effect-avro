@@ -151,3 +151,18 @@ it.effect("reports invalid registry responses through the typed error channel", 
   const valid = makeClient({ endpoint: "http://test", fetch: async () => json({ schema: JSON.stringify("string") }) })
   expect((yield* valid.getById(1)).schemaType).toBe("AVRO")
 }))
+
+it.effect("keys registration caches by normalized references and reads caches lazily", () => Effect.gen(function*() {
+  let calls = 0
+  const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: ++calls }) })
+  const base = { subject: "s", schema: "E" }
+  const first = client.register({ ...base, references: [{ name: "E", subject: "e", version: 1 }] })
+  expect((yield* first).id).toBe(1)
+  expect((yield* first).id).toBe(1)
+  expect((yield* client.getId({ ...base, references: [{ name: "E", subject: "e", version: 2 }] })).id).toBe(2)
+  expect((yield* client.register({ ...base, references: [{ name: "E", subject: "other", version: 2 }] })).id).toBe(3)
+  const references = [{ name: "E", subject: "e", version: 1 }, { name: "F", subject: "f", version: 1 }]
+  const registered = yield* client.register({ ...base, references })
+  expect((yield* client.getId({ ...base, references: [...references].reverse() })).id).toBe(registered.id)
+  expect(calls).toBe(4)
+}))
