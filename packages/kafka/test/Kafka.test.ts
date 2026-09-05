@@ -113,3 +113,18 @@ const json = (body: unknown) =>
     status: 200,
     headers: { "Content-Type": "application/json" }
   })
+
+it.effect("attaches message context while preserving the underlying decode error", () => Effect.gen(function*() {
+  const cases = [
+    { payload: new Uint8Array([1]), response: new Response("missing", { status: 404 }), tag: "InvalidRegistryFrame" },
+    { payload: new Uint8Array([0, 0, 0, 0, 1]), response: new Response("missing", { status: 404 }), tag: "SchemaRegistryHttpError" },
+    { payload: new Uint8Array([0, 0, 0, 0, 1, 2]), response: json({ schema: JSON.stringify("string") }), tag: "AvroError" }
+  ]
+  for (const entry of cases) {
+    const client = makeClient({ endpoint: "http://test", fetch: async () => entry.response })
+    const error = yield* decodeMessageValue(client, { topic: "t", partition: 2, offset: "3", value: entry.payload }).pipe(
+      Effect.catchTag("KafkaAvroError", (error) => Effect.succeed(error))
+    )
+    expect(error).toMatchObject({ _tag: "KafkaAvroError", topic: "t", partition: 2, offset: "3", location: "value", cause: { _tag: entry.tag } })
+  }
+}))

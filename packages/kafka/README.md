@@ -50,3 +50,5 @@ const program = Effect.gen(function*() {
 - Contextual decode errors that include topic, partition, offset, and key/value location.
 - Lower-level helpers stay Kafka-client agnostic and accept a `SchemaRegistryClient` directly.
 - Schema-backed `KafkaAvroError` tagged errors for `Effect.catchTag`.
+
+Message-level decode helpers wrap registry and Avro failures in `KafkaAvroError`, with message coordinates and the original tagged error in `cause`. Direct registry deserializers retain their original error types.
