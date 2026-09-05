@@ -142,3 +142,14 @@ it("normalizes missing optional fields through nested unions", () => {
   const optional = avro(Schema.Struct({ x: Schema.optional(Schema.String) }))
   expect(Schema.decodeUnknownSync(optional)(Schema.encodeSync(optional)({ x: undefined }))).toEqual({})
 })
+
+it("keeps same-named records in separate namespaces through the schema adapter", () => {
+  const schema = { type: "record", name: "a.Root", fields: [
+    { name: "first", type: { type: "record", name: "Item", fields: [{ name: "x", type: "int" }] } },
+    { name: "other", type: { type: "record", name: "b.Item", fields: [{ name: "x", type: "string" }] } },
+    { name: "again", type: "Item" }
+  ] } as const
+  const codec = avro(fromAvroSchema(schema), { avroSchema: schema })
+  const value = { first: { x: 1 }, other: { x: "other" }, again: { x: 2 } }
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
+})

@@ -107,3 +107,20 @@ it("enforces integer ranges and handles floating point special values consistent
     expect(decode(["null", "double"], encode(["null", "double"], value))).toBe(value)
   }
 })
+
+it("resolves dotted parent namespaces and qualified references without short-name collisions", () => {
+  const schema = { type: "record", name: "a.Root", namespace: "ignored", fields: [
+    { name: "local", type: { type: "record", name: "Item", aliases: ["Alias"], fields: [{ name: "x", type: "int" }] } },
+    { name: "other", type: { type: "record", name: "b.Item", fields: [{ name: "x", type: "string" }] } },
+    { name: "again", type: "a.Item" },
+    { name: "alias", type: "Alias" }
+  ] } as const
+  const value = { local: { x: 1 }, other: { x: "other" }, again: { x: 2 }, alias: { x: 3 } }
+  const bytes = new Uint8Array([2, 10, 111, 116, 104, 101, 114, 4, 6])
+  expect(encode(schema, value)).toEqual(bytes)
+  expect(decode(schema, bytes)).toEqual(value)
+  expect(() => encode({ type: "record", name: "R", fields: [
+    { name: "x", type: { type: "fixed", name: "b.F", size: 1 } },
+    { name: "y", type: "a.F" }
+  ] }, { x: new Uint8Array(1), y: new Uint8Array(1) })).toThrow("Unknown Avro type reference a.F")
+})
