@@ -179,3 +179,17 @@ it("interns enum/fixed definitions and generates distinct nested names", () => {
   const value = { a: { item: { x: "x" } }, b: { item: { y: "y" } } }
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
+
+it("imports enum and fixed references in their defining namespaces", () => {
+  const schema = { type: "record", name: "a.R", fields: [
+    { name: "a", type: { type: "enum", name: "E", symbols: ["X"] } },
+    { name: "b", type: "E" },
+    { name: "c", type: { type: "fixed", name: "F", size: 1, aliases: ["Alias"] } },
+    { name: "d", type: "Alias" },
+    { name: "other", type: { type: "enum", name: "b.E", symbols: ["Y"] } },
+    { name: "again", type: "a.E" }
+  ] } as const
+  const codec = avro(fromAvroSchema(schema), { avroSchema: schema })
+  const value = { a: "X", b: "X", c: new Uint8Array([1]), d: new Uint8Array([2]), other: "Y", again: "X" }
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
+})
