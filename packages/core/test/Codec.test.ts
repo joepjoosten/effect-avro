@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
-import { Effect } from "effect"
-import { decode, encode, encodeEffect, parse } from "../src/index.js"
+import { Effect, Schema } from "effect"
+import { AvroSchema, decode, encode, encodeEffect, parse } from "../src/index.js"
 
 describe("@effect-avro/core", () => {
   it("encodes and decodes primitives", () => {
@@ -142,4 +142,15 @@ it("preserves special keys as own data properties without changing prototypes", 
 
 it("reports invalid bigint values as Avro errors", () => {
   expect(() => encode("long", 1n)).toThrow("Expected Avro long")
+})
+
+it("preserves schema metadata and accepts object-form type references", () => {
+  const schemas = [
+    { type: "string" }, { type: "example.Ref" },
+    { type: "record", name: "A", "x-effect-tag": "A", fields: [{ name: "x", type: "int", custom: true }] },
+    { type: "fixed", name: "F", size: 4, logicalType: "decimal", precision: 4, scale: 2 }
+  ]
+  for (const schema of schemas) expect(Schema.decodeUnknownSync(AvroSchema)(schema)).toEqual(schema)
+  expect(() => Schema.decodeUnknownSync(AvroSchema)({ type: "record" })).toThrow()
+  expect(() => Schema.decodeUnknownSync(AvroSchema)({ type: "record", logicalType: "unknown" })).toThrow()
 })

@@ -21,7 +21,7 @@ export type AvroPrimitive = Avro.AvroPrimitive
 export const AvroRecordField = Avro.AvroRecordField
 export type AvroRecordField = Avro.AvroRecordField
 
-export const AvroRecordSchema = Avro.AvroRecordSchema as Schema.Schema<AvroRecordSchema>
+export const AvroRecordSchema = Avro.AvroRecordSchema as Schema.Codec<AvroRecordSchema>
 export type AvroRecordSchema = Avro.AvroRecordSchema & {
   readonly [EffectTagMetadataKey]?: string
 }

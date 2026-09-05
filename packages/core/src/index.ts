@@ -70,7 +70,10 @@ export type AvroLogicalSchema = {
 
 export type AvroNamedSchema = AvroRecordSchema | AvroEnumSchema | AvroFixedSchema
 export type AvroUnionSchema = ReadonlyArray<AvroSchema>
+export type AvroTypeReference = { readonly type: string; readonly [key: string]: unknown }
+
 export type AvroSchema =
+  | AvroTypeReference
   | AvroPrimitive
   | string
   | AvroRecordSchema
@@ -81,26 +84,26 @@ export type AvroSchema =
   | AvroLogicalSchema
   | AvroUnionSchema
 
-export const AvroRecordField: Schema.Schema<AvroRecordField> = Schema.Struct({
+export const AvroRecordField: Schema.Codec<AvroRecordField> = Schema.StructWithRest(Schema.Struct({
   name: Schema.String,
-  type: Schema.suspend((): Schema.Schema<AvroSchema> => AvroSchema),
+  type: Schema.suspend((): Schema.Codec<AvroSchema> => AvroSchema),
   doc: Schema.optionalKey(Schema.String),
   default: Schema.optionalKey(Schema.Unknown),
   "x-effect-optional": Schema.optionalKey(Schema.Boolean),
   order: Schema.optionalKey(Schema.Literals(["ascending", "descending", "ignore"])),
   aliases: Schema.optionalKey(Schema.Array(Schema.String))
-}) as Schema.Schema<AvroRecordField>
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroRecordField>
 
-export const AvroRecordSchema: Schema.Schema<AvroRecordSchema> = Schema.Struct({
+export const AvroRecordSchema: Schema.Codec<AvroRecordSchema> = Schema.StructWithRest(Schema.Struct({
   type: Schema.Literals(["record", "error"]),
   name: Schema.String,
   namespace: Schema.optionalKey(Schema.String),
   doc: Schema.optionalKey(Schema.String),
   aliases: Schema.optionalKey(Schema.Array(Schema.String)),
   fields: Schema.Array(AvroRecordField)
-}) as Schema.Schema<AvroRecordSchema>
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroRecordSchema>
 
-export const AvroEnumSchema: Schema.Schema<AvroEnumSchema> = Schema.Struct({
+export const AvroEnumSchema: Schema.Codec<AvroEnumSchema> = Schema.StructWithRest(Schema.Struct({
   type: Schema.Literal("enum"),
   name: Schema.String,
   namespace: Schema.optionalKey(Schema.String),
@@ -108,35 +111,44 @@ export const AvroEnumSchema: Schema.Schema<AvroEnumSchema> = Schema.Struct({
   aliases: Schema.optionalKey(Schema.Array(Schema.String)),
   symbols: Schema.Array(Schema.String),
   default: Schema.optionalKey(Schema.String)
-}) as Schema.Schema<AvroEnumSchema>
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroEnumSchema>
 
-export const AvroArraySchema: Schema.Schema<AvroArraySchema> = Schema.Struct({
+export const AvroArraySchema: Schema.Codec<AvroArraySchema> = Schema.StructWithRest(Schema.Struct({
   type: Schema.Literal("array"),
-  items: Schema.suspend((): Schema.Schema<AvroSchema> => AvroSchema)
-}) as Schema.Schema<AvroArraySchema>
+  items: Schema.suspend((): Schema.Codec<AvroSchema> => AvroSchema)
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroArraySchema>
 
-export const AvroMapSchema: Schema.Schema<AvroMapSchema> = Schema.Struct({
+export const AvroMapSchema: Schema.Codec<AvroMapSchema> = Schema.StructWithRest(Schema.Struct({
   type: Schema.Literal("map"),
-  values: Schema.suspend((): Schema.Schema<AvroSchema> => AvroSchema)
-}) as Schema.Schema<AvroMapSchema>
+  values: Schema.suspend((): Schema.Codec<AvroSchema> => AvroSchema)
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroMapSchema>
 
-export const AvroFixedSchema: Schema.Schema<AvroFixedSchema> = Schema.Struct({
+export const AvroFixedSchema: Schema.Codec<AvroFixedSchema> = Schema.StructWithRest(Schema.Struct({
   type: Schema.Literal("fixed"),
   name: Schema.String,
   namespace: Schema.optionalKey(Schema.String),
   aliases: Schema.optionalKey(Schema.Array(Schema.String)),
   size: Schema.Number,
   logicalType: Schema.optionalKey(Schema.String)
-}) as Schema.Schema<AvroFixedSchema>
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroFixedSchema>
 
-export const AvroLogicalSchema: Schema.Schema<AvroLogicalSchema> = Schema.Struct({
-  type: Schema.suspend((): Schema.Schema<AvroSchema> => AvroSchema),
+export const AvroLogicalSchema: Schema.Codec<AvroLogicalSchema> = Schema.StructWithRest(Schema.Struct({
+  type: Schema.suspend(() => referenceType),
   logicalType: Schema.String,
   precision: Schema.optionalKey(Schema.Number),
   scale: Schema.optionalKey(Schema.Number)
-}) as Schema.Schema<AvroLogicalSchema>
+}), [Schema.Record(Schema.String, Schema.Unknown)]) as Schema.Codec<AvroLogicalSchema>
 
-export const AvroSchema: Schema.Schema<AvroSchema> = Schema.suspend(() =>
+const referenceType = Schema.String.check(Schema.makeFilter((value) =>
+  !["record", "error", "enum", "fixed", "array", "map"].includes(value)
+))
+
+export const AvroTypeReference: Schema.Codec<AvroTypeReference> = Schema.StructWithRest(
+  Schema.Struct({ type: referenceType }),
+  [Schema.Record(Schema.String, Schema.Unknown)]
+)
+
+export const AvroSchema: Schema.Codec<AvroSchema> = Schema.suspend(() =>
   Schema.Union([
     Schema.String,
     AvroRecordSchema,
@@ -145,9 +157,10 @@ export const AvroSchema: Schema.Schema<AvroSchema> = Schema.suspend(() =>
     AvroMapSchema,
     AvroFixedSchema,
     AvroLogicalSchema,
+    AvroTypeReference,
     Schema.Array(AvroSchema)
   ])
-) as Schema.Schema<AvroSchema>
+) as Schema.Codec<AvroSchema>
 
 type AvroObjectSchema = Exclude<AvroSchema, string | AvroUnionSchema>
 
