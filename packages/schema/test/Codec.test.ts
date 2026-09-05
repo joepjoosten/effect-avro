@@ -116,3 +116,15 @@ describe("@effect-avro/schema", () => {
       expect([...decode(encode(value)).data]).toEqual([1, 2, 3])
     }))
 })
+
+ it("preserves identical tagged union branches, including nested arrays", () => {
+  const Event = Schema.Union([
+    Schema.TaggedStruct("A", { id: Long }),
+    Schema.TaggedStruct("B", { id: Long })
+  ])
+  for (const source of [Event, Schema.Array(Event)]) {
+    const codec = avro(source)
+    const value = source === Event ? { _tag: "B", id: 1 } : [{ _tag: "B", id: 1 }, { _tag: "A", id: 2 }]
+    expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value as never))).toEqual(value)
+  }
+})
