@@ -17,6 +17,7 @@ export type AvroRecordField = {
   readonly type: AvroSchema
   readonly doc?: string
   readonly default?: unknown
+  readonly "x-effect-optional"?: boolean
   readonly order?: "ascending" | "descending" | "ignore"
   readonly aliases?: ReadonlyArray<string>
 }
@@ -85,6 +86,7 @@ export const AvroRecordField: Schema.Schema<AvroRecordField> = Schema.Struct({
   type: Schema.suspend((): Schema.Schema<AvroSchema> => AvroSchema),
   doc: Schema.optionalKey(Schema.String),
   default: Schema.optionalKey(Schema.Unknown),
+  "x-effect-optional": Schema.optionalKey(Schema.Boolean),
   order: Schema.optionalKey(Schema.Literals(["ascending", "descending", "ignore"])),
   aliases: Schema.optionalKey(Schema.Array(Schema.String))
 }) as Schema.Schema<AvroRecordField>

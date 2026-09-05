@@ -128,3 +128,17 @@ describe("@effect-avro/schema", () => {
     expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value as never))).toEqual(value)
   }
 })
+
+it("normalizes missing optional fields through nested unions", () => {
+  const Event = Schema.Union([
+    Schema.TaggedStruct("Optional", { x: Schema.optionalKey(Schema.String) }),
+    Schema.TaggedStruct("Other", { id: Long })
+  ])
+  const codec = avro(Schema.Struct({ events: Schema.Array(Event) }))
+  const value = { events: [{ _tag: "Optional" as const }, { _tag: "Optional" as const, x: "ok" }] }
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
+  const nullable = avro(Schema.Struct({ x: Schema.optionalKey(Schema.NullOr(Schema.String)) }))
+  expect(Schema.decodeUnknownSync(nullable)(Schema.encodeSync(nullable)({ x: null }))).toEqual({ x: null })
+  const optional = avro(Schema.Struct({ x: Schema.optional(Schema.String) }))
+  expect(Schema.decodeUnknownSync(optional)(Schema.encodeSync(optional)({ x: undefined }))).toEqual({})
+})
