@@ -193,3 +193,11 @@ it("imports enum and fixed references in their defining namespaces", () => {
   const value = { a: "X", b: "X", c: new Uint8Array([1]), d: new Uint8Array([2]), other: "Y", again: "X" }
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
+
+it("rejects unsupported native bigint and numeric enum mappings at construction", () => {
+  expect(() => avro(Schema.BigInt)).toThrow("BigInt schemas require an explicit encoding")
+  expect(() => avro(Schema.Literal(1n))).toThrow("BigInt literals require an explicit encoding")
+  expect(() => avro(Schema.Enum({ A: 0, B: 1 }))).toThrow("Numeric enums require an explicit encoding")
+  const codec = avro(Schema.Enum({ A: "A", B: "B" }))
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)("B"))).toBe("B")
+})
