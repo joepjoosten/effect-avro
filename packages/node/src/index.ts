@@ -141,7 +141,9 @@ export const decodeContainer = <A = unknown>(
   input: Buffer | Uint8Array,
   options?: Avro.ParseOptions
 ): ContainerFile<A> => {
-  const reader = new BinaryReader(Buffer.from(input))
+  const budget = new Avro.DecodeBudget(options?.limits)
+  if (input.length > budget.limits.maxBytes) throw avroContainerError("Avro decode maxBytes exceeded")
+  const reader = new BinaryReader(Buffer.from(input), budget)
   const actualMagic = reader.readFixed(magic.length)
   if (!actualMagic.equals(magic)) {
     throw avroContainerError("Invalid Avro object container magic header")
@@ -162,15 +164,16 @@ export const decodeContainer = <A = unknown>(
     if (count <= 0) {
       throw avroContainerError(`Invalid Avro object container block count ${count}`)
     }
+    budget.collection(count)
     const size = reader.readLong()
-    if (size < 0) {
+    if (size < 0 || size > budget.limits.maxBytes) {
       throw avroContainerError(`Invalid Avro object container block size ${size}`)
     }
     const compressedBlock = reader.readFixed(size)
-    const block = decodeBlock(codec, compressedBlock)
+    const block = decodeBlock(codec, compressedBlock, budget.limits.maxBlockBytes)
     let offset = 0
     for (let index = 0; index < count; index++) {
-      const decoded = type.decodePartial(block, offset)
+      const decoded = type.decodePartial(block, offset, budget)
       values.push(decoded.value)
       offset = decoded.offset
     }
@@ -295,12 +298,13 @@ const encodeBlock = (codec: ContainerCodec, block: Buffer): Buffer => {
   }
 }
 
-const decodeBlock = (codec: ContainerCodec, block: Buffer): Buffer => {
+const decodeBlock = (codec: ContainerCodec, block: Buffer, maxOutputLength = Avro.defaultDecodeLimits.maxBlockBytes): Buffer => {
   switch (codec) {
     case "null":
+      if (block.length > maxOutputLength) throw avroContainerError("Avro block exceeds maxBlockBytes")
       return block
     case "deflate":
-      return Zlib.inflateRawSync(block)
+      return Zlib.inflateRawSync(block, { maxOutputLength: Math.max(1, maxOutputLength) })
   }
 }
 
@@ -332,6 +336,7 @@ const readMetadata = (reader: BinaryReader): Record<string, Buffer> => {
       return out
     }
     const actualCount = count < 0 ? -count : count
+    if (actualCount > reader.budget.limits.maxCollectionItems) throw avroContainerError("Avro metadata maxCollectionItems exceeded")
     if (count < 0) {
       reader.readLong()
     }
@@ -395,7 +400,7 @@ class BinaryReader {
   readonly buffer: Buffer
   offset = 0
 
-  constructor(buffer: Buffer) {
+  constructor(buffer: Buffer, readonly budget = new Avro.DecodeBudget()) {
     this.buffer = buffer
   }
 

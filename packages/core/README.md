@@ -44,3 +44,5 @@ const decoded = decode(schema, bytes)
 - Partial decode support for block-oriented readers
 - `Effect.try` based `encodeEffect` and `decodeEffect` helpers
 - Schema-backed `AvroError` tagged errors for `Effect.catchTag`
+
+Decoding accepts `limits` in parse options. Defaults are 128 levels of nesting, 1,000,000 decoded values and collection items, 64 MiB of input/decoded bytes, and 16 MiB per block. Counts include structural values such as arrays and records. Set explicit nonnegative safe-integer limits for trusted larger inputs. A shared `DecodeBudget` can bound multiple `Type.decodePartial` calls; container readers share a budget across records and blocks.

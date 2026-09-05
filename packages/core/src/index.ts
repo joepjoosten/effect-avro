@@ -175,7 +175,7 @@ export interface Type<A = unknown> {
   readonly fromUint8Array: (buffer: Uint8Array) => A
   readonly toBuffer: (value: A) => Uint8Array
   readonly fromBuffer: (buffer: Uint8Array) => A
-  readonly decodePartial: (buffer: Uint8Array, offset?: number) => DecodeResult<A>
+  readonly decodePartial: (buffer: Uint8Array, offset?: number, budget?: DecodeBudget) => DecodeResult<A>
   readonly encode: (value: A) => Uint8Array
   readonly decode: (buffer: Uint8Array) => A
   readonly isValid: (value: unknown) => value is A
@@ -193,7 +193,61 @@ export type DecodeResult<A = unknown> = {
   readonly offset: number
 }
 
+export const DecodeLimits = Schema.Struct({
+  maxDepth: Schema.optionalKey(Schema.Number),
+  maxValues: Schema.optionalKey(Schema.Number),
+  maxCollectionItems: Schema.optionalKey(Schema.Number),
+  maxBytes: Schema.optionalKey(Schema.Number),
+  maxBlockBytes: Schema.optionalKey(Schema.Number)
+})
+export type DecodeLimits = typeof DecodeLimits.Type
+
+export const defaultDecodeLimits: Required<DecodeLimits> = Object.freeze({
+  maxDepth: 128,
+  maxValues: 1_000_000,
+  maxCollectionItems: 1_000_000,
+  maxBytes: 64 * 1024 * 1024,
+  maxBlockBytes: 16 * 1024 * 1024
+})
+
+/** Share one budget across partial decodes belonging to the same input. */
+export class DecodeBudget {
+  readonly limits: Required<DecodeLimits>
+  private depth = 0
+  private values = 0
+  private bytes = 0
+
+  constructor(limits: DecodeLimits = {}) {
+    this.limits = { ...defaultDecodeLimits, ...limits }
+    for (const [key, value] of Object.entries(this.limits)) {
+      if (!Number.isSafeInteger(value) || value < 0) throw avroError(`Invalid decode limit ${key}: ${value}`)
+    }
+  }
+
+  enter(): void {
+    if (++this.depth > this.limits.maxDepth) throw avroError("Avro decode maxDepth exceeded")
+    if (++this.values > this.limits.maxValues) throw avroError("Avro decode maxValues exceeded")
+  }
+
+  leave(): void { this.depth-- }
+
+  collection(count: number): void {
+    if (!Number.isSafeInteger(count) || count < 0 || count > this.limits.maxCollectionItems) {
+      throw avroError("Avro decode maxCollectionItems exceeded")
+    }
+    if (count > this.limits.maxValues - this.values) throw avroError("Avro decode maxValues exceeded")
+  }
+
+  consumeBytes(size: number): void {
+    if (!Number.isSafeInteger(size) || size < 0 || size > this.limits.maxBytes - this.bytes) {
+      throw avroError("Avro decode maxBytes exceeded")
+    }
+    this.bytes += size
+  }
+}
+
 export const ParseOptions = Schema.Struct({
+  limits: Schema.optionalKey(DecodeLimits),
   namespace: Schema.optionalKey(Schema.String),
   definitions: Schema.optionalKey(Schema.Array(AvroSchema)),
   restoreTags: Schema.optionalKey(Schema.Boolean)
@@ -256,7 +310,7 @@ export const parse = <A = unknown>(schema: AvroSchema, options: ParseOptions = {
       return writer.toUint8Array()
     },
     fromUint8Array: (input) => {
-      const reader = new BinaryReader(input, 0, options.restoreTags)
+      const reader = new BinaryReader(input, 0, options.restoreTags, new DecodeBudget(options.limits))
       const value = readNode(resolveNode(node), reader) as A
       if (!reader.done) {
         throw avroError(`Trailing Avro data at offset ${reader.offset}`)
@@ -269,8 +323,8 @@ export const parse = <A = unknown>(schema: AvroSchema, options: ParseOptions = {
     fromBuffer(input) {
       return api.fromUint8Array(input)
     },
-    decodePartial: (input, offset = 0) => {
-      const reader = new BinaryReader(input, offset, options.restoreTags)
+    decodePartial: (input, offset = 0, budget = new DecodeBudget(options.limits)) => {
+      const reader = new BinaryReader(input, offset, options.restoreTags, budget)
       return {
         value: readNode(resolveNode(node), reader) as A,
         offset: reader.offset
@@ -438,76 +492,81 @@ const resolveNode = (node: Node): Node => {
   return resolved
 }
 
-const readNode = (node: Node, reader: BinaryReader): unknown => {
-  node = resolveNode(node)
-  switch (node._tag) {
-    case "null":
-      return null
-    case "boolean":
-      return reader.readByte() === 1
-    case "int": {
-      const value = reader.readLong()
-      if (!isAvroInt(value)) throw avroError(`Avro int is outside the signed 32-bit range: ${value}`)
-      return value
-    }
-    case "long":
-      return reader.readLong()
-    case "float":
-      return reader.readFloat()
-    case "double":
-      return reader.readDouble()
-    case "bytes":
-      return reader.readBytes()
-    case "string":
-      return reader.readString()
-    case "fixed":
-      return reader.readFixed(node.size)
-    case "enum": {
-      const index = reader.readLong()
-      const symbol = node.symbols[index]
-      if (symbol === undefined) {
-        throw avroError(`Invalid enum index ${index} for ${node.name}`)
+const readNode = (inputNode: Node, reader: BinaryReader): unknown => {
+  reader.budget.enter()
+  try {
+    const node = resolveNode(inputNode)
+    switch (node._tag) {
+      case "null":
+        return null
+      case "boolean":
+        return reader.readByte() === 1
+      case "int": {
+        const value = reader.readLong()
+        if (!isAvroInt(value)) throw avroError(`Avro int is outside the signed 32-bit range: ${value}`)
+        return value
       }
-      return symbol
-    }
-    case "array": {
-      const out: Array<unknown> = []
-      readBlocks(reader, (count) => {
-        for (let index = 0; index < count; index++) {
-          out.push(readNode(node.item, reader))
+      case "long":
+        return reader.readLong()
+      case "float":
+        return reader.readFloat()
+      case "double":
+        return reader.readDouble()
+      case "bytes":
+        return reader.readBytes()
+      case "string":
+        return reader.readString()
+      case "fixed":
+        return reader.readFixed(node.size)
+      case "enum": {
+        const index = reader.readLong()
+        const symbol = node.symbols[index]
+        if (symbol === undefined) {
+          throw avroError(`Invalid enum index ${index} for ${node.name}`)
         }
-      })
-      return out
-    }
-    case "map": {
-      const out: Record<string, unknown> = {}
-      readBlocks(reader, (count) => {
-        for (let index = 0; index < count; index++) {
-          setOwn(out, reader.readString(), readNode(node.value, reader))
+        return symbol
+      }
+      case "array": {
+        const out: Array<unknown> = []
+        readBlocks(reader, (count) => {
+          for (let index = 0; index < count; index++) {
+            out.push(readNode(node.item, reader))
+          }
+        })
+        return out
+      }
+      case "map": {
+        const out: Record<string, unknown> = {}
+        readBlocks(reader, (count) => {
+          for (let index = 0; index < count; index++) {
+            setOwn(out, reader.readString(), readNode(node.value, reader))
+          }
+        })
+        return out
+      }
+      case "record": {
+        const out: Record<string, unknown> = {}
+        for (const field of node.fields) {
+          setOwn(out, field.name, readNode(field.node, reader))
         }
-      })
-      return out
-    }
-    case "record": {
-      const out: Record<string, unknown> = {}
-      for (const field of node.fields) {
-        setOwn(out, field.name, readNode(field.node, reader))
+        if (reader.restoreTags && typeof node.schema["x-effect-tag"] === "string") {
+          out._tag = node.schema["x-effect-tag"]
+        }
+        return out
       }
-      if (reader.restoreTags && typeof node.schema["x-effect-tag"] === "string") {
-        out._tag = node.schema["x-effect-tag"]
+      case "union": {
+        const index = reader.readLong()
+        const branch = node.branches[index]
+        if (branch === undefined) {
+          throw avroError(`Invalid union branch index ${index}`)
+        }
+        return readNode(branch, reader)
       }
-      return out
+      case "ref":
+        return readNode(resolveNode(node), reader)
     }
-    case "union": {
-      const index = reader.readLong()
-      const branch = node.branches[index]
-      if (branch === undefined) {
-        throw avroError(`Invalid union branch index ${index}`)
-      }
-      return readNode(branch, reader)
-    }
-    case "ref":
-      return readNode(resolveNode(node), reader)
+  } finally {
+    reader.budget.leave()
   }
 }
 
@@ -682,16 +741,18 @@ const tagMatches = (node: Extract<Node, { readonly _tag: "record" }>, value: Rec
 const readBlocks = (reader: BinaryReader, read: (count: number) => void) => {
   while (true) {
     const count = reader.readLong()
-    if (count === 0) {
-      return
-    }
+    if (count === 0) return
+    const actualCount = Math.abs(count)
+    reader.budget.collection(actualCount)
     if (count < 0) {
-      const actualCount = Math.abs(count)
-      reader.readLong() // block size in bytes; data is still consumed item-by-item
+      const size = reader.readLong()
+      if (size < 0 || size > reader.budget.limits.maxBlockBytes || size > reader.buffer.length - reader.offset) {
+        throw avroError("Invalid or oversized Avro collection block")
+      }
+      const end = reader.offset + size
       read(actualCount)
-    } else {
-      read(count)
-    }
+      if (reader.offset !== end) throw avroError("Avro collection block size mismatch")
+    } else read(actualCount)
   }
 }
 
@@ -756,7 +817,8 @@ class BinaryReader {
   readonly buffer: Uint8Array
   offset: number
 
-  constructor(buffer: Uint8Array, offset = 0, readonly restoreTags = false) {
+  constructor(buffer: Uint8Array, offset = 0, readonly restoreTags = false, readonly budget = new DecodeBudget()) {
+    if (buffer.length > budget.limits.maxBytes) throw avroError("Avro decode maxBytes exceeded")
     this.buffer = buffer
     this.offset = offset
   }
@@ -826,6 +888,7 @@ class BinaryReader {
   }
 
   private ensure(bytes: number) {
+    this.budget.consumeBytes(bytes)
     if (this.offset + bytes > this.buffer.length) {
       throw avroError("Truncated Avro buffer")
     }
