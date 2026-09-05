@@ -499,14 +499,19 @@ const nullable = (schema: AvroSchema): AvroSchema => {
 }
 
 const uniqueUnion = (schemas: ReadonlyArray<AvroSchema>): ReadonlyArray<AvroSchema> => {
-  const seen = new Set<string>()
+  const seen = new Map<string, AvroSchema>()
   const out: Array<AvroSchema> = []
-  for (const schema of schemas) {
+  for (const schema of schemas.flatMap((member) => Array.isArray(member) ? member : [member])) {
     const key = branchName(schema)
-    if (!seen.has(key)) {
-      seen.add(key)
-      out.push(schema)
+    const existing = seen.get(key)
+    if (existing !== undefined) {
+      if (JSON.stringify(existing) !== JSON.stringify(schema)) {
+        throw avroSchemaError(`Distinct ${key} alternatives cannot be represented faithfully in an Avro union`)
+      }
+      continue
     }
+    seen.set(key, schema)
+    out.push(schema)
   }
   return out
 }
