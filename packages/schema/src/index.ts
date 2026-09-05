@@ -523,12 +523,13 @@ const withLogicalAnnotations = <A extends AvroSchema>(ast: SchemaAST.AST, schema
   }
   const precision = SchemaAST.resolveAt<number>(AvroPrecisionAnnotationId)(ast)
   const scale = SchemaAST.resolveAt<number>(AvroScaleAnnotationId)(ast)
-  return {
-    type: schema,
+  const annotations = {
     logicalType,
     ...(precision === undefined ? {} : { precision }),
     ...(scale === undefined ? {} : { scale })
   }
+  if (typeof schema === "object" && !Array.isArray(schema)) return { ...schema, ...annotations }
+  return { type: schema, ...annotations }
 }
 
 const hasIntCheck = (ast: SchemaAST.AST): boolean => {
