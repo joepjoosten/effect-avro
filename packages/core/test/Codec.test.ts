@@ -154,3 +154,15 @@ it("preserves schema metadata and accepts object-form type references", () => {
   expect(() => Schema.decodeUnknownSync(AvroSchema)({ type: "record" })).toThrow()
   expect(() => Schema.decodeUnknownSync(AvroSchema)({ type: "record", logicalType: "unknown" })).toThrow()
 })
+
+it("bounds zero-width collections, nesting and partial decoding work", () => {
+  const schema = { type: "array", items: "null" } as const
+  const bytes = new Uint8Array([...encode("long", 100000), 0])
+  expect(() => decode(schema, bytes, { limits: { maxCollectionItems: 10 } })).toThrow("maxCollectionItems")
+  expect(() => decode(schema, encode(schema, [null, null]), { limits: { maxValues: 2 } })).toThrow("maxValues")
+  expect(() => decode(schema, encode(schema, [null]), { limits: { maxDepth: 1 } })).toThrow("maxDepth")
+  expect(decode(schema, encode(schema, [null, null]))).toEqual([null, null])
+  expect(() => decode("string", encode("string", "hello"), { limits: { maxBytes: 2 } })).toThrow("maxBytes")
+  expect(() => decode("null", new Uint8Array(), { limits: { maxValues: NaN } })).toThrow("Invalid decode limit")
+  expect(() => decode({ type: "array", items: "int" }, new Uint8Array([1, 0, 2, 0]))).toThrow("block size mismatch")
+})

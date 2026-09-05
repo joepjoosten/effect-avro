@@ -124,3 +124,11 @@ it("preserves special metadata keys", () => {
   expect(Object.hasOwn(result, "__proto__")).toBe(true)
   expect(result["__proto__"].toString()).toBe("data")
 })
+
+it("shares decode budgets across container blocks and bounds inflation", () => {
+  const file = encodeContainer({ type: "array", items: "null" }, [[null, null], [null, null]], { blockSize: 1 })
+  expect(() => decodeContainer(file, { limits: { maxValues: 5 } })).toThrow("maxValues")
+  const compressed = encodeContainer("string", ["a".repeat(1024)], { codec: "deflate" })
+  expect(() => decodeContainer(compressed, { limits: { maxBlockBytes: 32 } })).toThrow()
+  expect(decodeContainer(compressed, { limits: { maxBlockBytes: 2048 } }).values).toEqual(["a".repeat(1024)])
+})
