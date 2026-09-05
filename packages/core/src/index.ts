@@ -433,8 +433,11 @@ const readNode = (node: Node, reader: BinaryReader): unknown => {
       return null
     case "boolean":
       return reader.readByte() === 1
-    case "int":
-      return reader.readLong()
+    case "int": {
+      const value = reader.readLong()
+      if (!isAvroInt(value)) throw avroError(`Avro int is outside the signed 32-bit range: ${value}`)
+      return value
+    }
     case "long":
       return reader.readLong()
     case "float":
@@ -511,16 +514,16 @@ const writeNode = (node: Node, value: unknown, writer: BinaryWriter): void => {
       writer.writeByte(value ? 1 : 0)
       return
     case "int":
-      if (!Number.isInteger(value)) {
+      if (!isAvroInt(value)) {
         throw expected(node, value)
       }
       writer.writeLong(value as number)
       return
     case "long":
-      if (typeof value !== "number" || !Number.isFinite(value)) {
+      if (!Number.isSafeInteger(value)) {
         throw expected(node, value)
       }
-      writer.writeLong(value)
+      writer.writeLong(value as number)
       return
     case "float":
       if (typeof value !== "number") {
@@ -625,11 +628,12 @@ const matchesNode = (node: Node, value: unknown, active = new Map<Node, Set<unkn
       case "boolean":
         return typeof value === "boolean"
       case "int":
-        return Number.isInteger(value)
+        return isAvroInt(value)
       case "long":
+        return Number.isSafeInteger(value)
       case "float":
       case "double":
-        return typeof value === "number" && Number.isFinite(value)
+        return typeof value === "number"
       case "bytes":
         return value instanceof Uint8Array
       case "fixed":
@@ -859,3 +863,6 @@ const unqualified = (name: string): string => {
   const index = name.lastIndexOf(".")
   return index === -1 ? name : name.slice(index + 1)
 }
+
+const isAvroInt = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647
