@@ -116,3 +116,11 @@ const platformError = (method: string, path: string, cause: unknown) =>
     pathOrDescriptor: path,
     cause
   })
+
+it("preserves special metadata keys", () => {
+  const metadata = JSON.parse('{"__proto__":"data","constructor":"ctor"}')
+  const result = decodeContainer(encodeContainer("null", [], { metadata })).metadata
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+  expect(Object.hasOwn(result, "__proto__")).toBe(true)
+  expect(result["__proto__"].toString()).toBe("data")
+})

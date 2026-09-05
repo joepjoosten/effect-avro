@@ -468,7 +468,7 @@ const readNode = (node: Node, reader: BinaryReader): unknown => {
       const out: Record<string, unknown> = {}
       readBlocks(reader, (count) => {
         for (let index = 0; index < count; index++) {
-          out[reader.readString()] = readNode(node.value, reader)
+          setOwn(out, reader.readString(), readNode(node.value, reader))
         }
       })
       return out
@@ -476,7 +476,7 @@ const readNode = (node: Node, reader: BinaryReader): unknown => {
     case "record": {
       const out: Record<string, unknown> = {}
       for (const field of node.fields) {
-        out[field.name] = readNode(field.node, reader)
+        setOwn(out, field.name, readNode(field.node, reader))
       }
       if (reader.restoreTags && typeof node.schema["x-effect-tag"] === "string") {
         out._tag = node.schema["x-effect-tag"]
@@ -863,3 +863,7 @@ const namespaceOf = (name: string): string | undefined => {
 
 const isAvroInt = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647
+
+const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
+  Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
+}

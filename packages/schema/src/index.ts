@@ -666,7 +666,7 @@ const fromAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRe
       const out: Record<string, unknown> = {}
       for (const field of concrete.fields) {
         if (field["x-effect-optional"] === true && value[field.name] === null) continue
-        out[field.name] = fromAvroRuntime(value[field.name], field.type, registry, splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? "")
+        setOwn(out, field.name, fromAvroRuntime(value[field.name], field.type, registry, splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? ""))
       }
       const tag = concrete[EffectTagMetadataKey]
       if (tag !== undefined) {
@@ -705,7 +705,7 @@ const toAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRegi
       const out: Record<string, unknown> = {}
       for (const field of concrete.fields) {
         const item = value[field.name] === undefined && field.default === null ? null : value[field.name]
-        out[field.name] = toAvroRuntime(item, field.type, registry, splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? "")
+        setOwn(out, field.name, toAvroRuntime(item, field.type, registry, splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? ""))
       }
       if (concrete[EffectTagMetadataKey] !== undefined) out._tag = value._tag
       return out
@@ -916,7 +916,7 @@ const buildRecordSchema = (schema: AvroRecordSchema, ctx: FromAvroContext): Sche
       namespace: splitName(name).namespace,
       schemas: ctx.schemas
     })
-    fields[field.name] = field.default === undefined ? fieldSchema : Schema.optionalKey(fieldSchema)
+    setOwn(fields, field.name, field.default === undefined ? fieldSchema : Schema.optionalKey(fieldSchema))
   }
 
   const struct = Schema.Struct(fields).annotate({
@@ -958,4 +958,8 @@ const primitiveOrRef = (name: string, ctx: FromAvroContext): Schema.Constraint =
         return schema
       })
   }
+}
+
+const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
+  Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
 }

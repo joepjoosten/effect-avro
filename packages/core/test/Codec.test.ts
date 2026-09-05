@@ -124,3 +124,18 @@ it("resolves dotted parent namespaces and qualified references without short-nam
     { name: "y", type: "a.F" }
   ] }, { x: new Uint8Array(1), y: new Uint8Array(1) })).toThrow("Unknown Avro type reference a.F")
 })
+
+it("preserves special keys as own data properties without changing prototypes", () => {
+  const value = JSON.parse('{"__proto__":{"admin":true},"constructor":{"admin":false},"prototype":{"admin":true}}')
+  const schemas = [
+    { type: "map", values: { type: "map", values: "boolean" } },
+    { type: "record", name: "Special", fields: Object.keys(value).map((name) => ({ name, type: { type: "map", values: "boolean" } } as const)) }
+  ] as const
+  for (const schema of schemas) {
+    const result = decode<Record<string, unknown>>(schema, encode(schema, value))
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+    expect(Object.hasOwn(result, "__proto__")).toBe(true)
+    expect(result.admin).toBeUndefined()
+    expect(JSON.stringify(result)).toBe(JSON.stringify(value))
+  }
+})

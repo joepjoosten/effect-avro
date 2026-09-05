@@ -494,7 +494,7 @@ const sortJson = (value: unknown): unknown => {
   if (value !== null && typeof value === "object") {
     const out: Record<string, unknown> = {}
     for (const key of Object.keys(value).sort()) {
-      out[key] = sortJson((value as Record<string, unknown>)[key])
+      setOwn(out, key, sortJson((value as Record<string, unknown>)[key]))
     }
     return out
   }
@@ -548,4 +548,8 @@ const base64Encode = (value: string): string => {
     out += "="
   }
   return out
+}
+
+const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
+  Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
 }

@@ -307,7 +307,7 @@ const decodeBlock = (codec: ContainerCodec, block: Buffer): Buffer => {
 const normalizeMetadata = (metadata: Record<string, Buffer | Uint8Array | string> = {}): Record<string, Buffer> => {
   const out: Record<string, Buffer> = {}
   for (const [key, value] of Object.entries(metadata)) {
-    out[key] = typeof value === "string" ? Buffer.from(value, "utf8") : toBuffer(value)
+    setOwn(out, key, typeof value === "string" ? Buffer.from(value, "utf8") : toBuffer(value))
   }
   return out
 }
@@ -336,7 +336,7 @@ const readMetadata = (reader: BinaryReader): Record<string, Buffer> => {
       reader.readLong()
     }
     for (let index = 0; index < actualCount; index++) {
-      out[reader.readString()] = reader.readBytes()
+      setOwn(out, reader.readString(), reader.readBytes())
     }
   }
 }
@@ -472,3 +472,7 @@ const avroContainerError = (message: string, cause?: unknown): AvroContainerErro
   cause === undefined ? new AvroContainerError({ message }) : new AvroContainerError({ message, cause })
 
 const message = (error: unknown): string => error instanceof Error ? error.message : String(error)
+
+const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
+  Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
+}
