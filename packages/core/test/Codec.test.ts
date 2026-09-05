@@ -91,3 +91,19 @@ it("validates nested data before choosing record union branches", () => {
   const leaf = { children: [] }
   expect(tree.isValid({ children: [leaf, leaf] })).toBe(true)
 })
+
+it("enforces integer ranges and handles floating point special values consistently", () => {
+  for (const value of [-2147483648, 2147483647]) expect(decode("int", encode("int", value))).toBe(value)
+  for (const value of [-2147483649, 2147483648]) {
+    expect(parse("int").isValid(value)).toBe(false)
+    expect(() => encode("int", value)).toThrow()
+    expect(() => decode("int", encode("long", value))).toThrow()
+  }
+  expect(parse("long").isValid(1.5)).toBe(false)
+  expect(parse("long").isValid(Number.MAX_SAFE_INTEGER + 1)).toBe(false)
+  expect([...encode(["int", "long"], 2147483648)][0]).toBe(2)
+  for (const value of [NaN, Infinity, -Infinity]) {
+    expect(parse("double").isValid(value)).toBe(true)
+    expect(decode(["null", "double"], encode(["null", "double"], value))).toBe(value)
+  }
+})
