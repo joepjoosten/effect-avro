@@ -44,3 +44,5 @@ const Imported = fromAvroSchema(avroJson)
 - Schema-backed internal conversion errors for consistent Effect error reporting
 
 Imported schemas retain their original Avro definitions and metadata when recompiled or embedded. Avro field defaults do not make fields optional in the imported Effect schema.
+
+Pass `limits` to `avro(schema, { limits })` or `compileAvro` to configure the core decode budgets, including trusted inputs larger than the default limits.
