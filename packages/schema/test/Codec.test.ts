@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
-import { avro, Bytes, fromAvroSchema, Long, Fixed, toAvroSchema } from "../src/index.js"
+import { avro, AvroLogicalTypeAnnotationId, AvroPrecisionAnnotationId, Bytes, fromAvroSchema, Long, Fixed, toAvroSchema } from "../src/index.js"
 
 class User extends Schema.Class<User>("User")({
   id: Long,
@@ -209,4 +209,12 @@ it("rejects distinct array and map alternatives instead of discarding values", (
   ]))).toThrow("Distinct map alternatives")
   const codec = avro(Schema.NullOr(Schema.Array(Long)))
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)([1]))).toEqual([1])
+})
+
+it("attaches logical attributes directly to fixed definitions", () => {
+  const source = Fixed("Decimal", 4).annotate({ [AvroLogicalTypeAnnotationId]: "decimal", [AvroPrecisionAnnotationId]: 4 })
+  expect(toAvroSchema(source)).toEqual({ type: "fixed", name: "Decimal", size: 4, logicalType: "decimal", precision: 4 })
+  const codec = avro(source)
+  const value = new Uint8Array([0, 0, 0, 1])
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
