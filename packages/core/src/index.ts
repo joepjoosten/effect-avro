@@ -836,7 +836,7 @@ const concatBytes = (chunks: ReadonlyArray<Uint8Array>): Uint8Array => {
 }
 
 const expected = (node: Node, value: unknown) =>
-  avroError(`Expected Avro ${node._tag}, got ${JSON.stringify(value)}`)
+  avroError(`Expected Avro ${node._tag}, got ${formatValue(value)}`)
 
 const avroError = (message: string, cause?: unknown): AvroError =>
   cause === undefined ? new AvroError({ message }) : new AvroError({ message, cause })
@@ -866,4 +866,12 @@ const isAvroInt = (value: unknown): value is number =>
 
 const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
   Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
+}
+
+const formatValue = (value: unknown): string => {
+  try {
+    return JSON.stringify(value, (_, item) => typeof item === "bigint" ? `${item}n` : item) ?? String(value)
+  } catch {
+    return Object.prototype.toString.call(value)
+  }
 }

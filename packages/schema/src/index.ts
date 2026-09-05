@@ -245,7 +245,7 @@ const compileAst = (ast: SchemaAST.AST, state: CompileState, path: ReadonlyArray
     case "Declaration":
       return compileDeclarationAst(ast, state, path)
     case "BigInt":
-      return "long"
+      throw avroSchemaError("BigInt schemas require an explicit encoding to an Avro-supported type")
     default:
       throw unsupported(ast, path)
   }
@@ -316,7 +316,7 @@ const compileLiteral = (
     case "number":
       return Number.isInteger(ast.literal) ? "int" : "double"
     case "bigint":
-      return "long"
+      throw avroSchemaError("BigInt literals require an explicit encoding to an Avro-supported type")
   }
 }
 
@@ -325,7 +325,10 @@ const compileEnumAst = (
   state: CompileState,
   path: ReadonlyArray<string>
 ): AvroSchema => {
-  const symbols = ast.enums.map(([name, value]) => typeof value === "string" ? value : name)
+  if (ast.enums.some(([, value]) => typeof value !== "string")) {
+    throw avroSchemaError("Numeric enums require an explicit encoding to an Avro-supported type")
+  }
+  const symbols = ast.enums.map(([, value]) => String(value))
   return symbols.every((symbol) => namePattern.test(symbol))
     ? compileStringEnum(symbols, ast, state, path)
     : "string"

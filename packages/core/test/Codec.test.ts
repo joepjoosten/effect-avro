@@ -139,3 +139,7 @@ it("preserves special keys as own data properties without changing prototypes", 
     expect(JSON.stringify(result)).toBe(JSON.stringify(value))
   }
 })
+
+it("reports invalid bigint values as Avro errors", () => {
+  expect(() => encode("long", 1n)).toThrow("Expected Avro long")
+})
