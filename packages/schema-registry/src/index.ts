@@ -208,7 +208,7 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
         `/subjects/${encodeURIComponent(requestBody.subject)}/versions`,
         registryRequestBody(requestBody)
       )
-      const registered = normalizeRegisteredSchema(response, requestBody)
+      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, requestBody))
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
@@ -226,7 +226,7 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
         `/subjects/${encodeURIComponent(requestBody.subject)}`,
         registryRequestBody(requestBody)
       )
-      const registered = normalizeRegisteredSchema(response, requestBody)
+      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, requestBody))
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
@@ -239,7 +239,7 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
     }
     return Effect.gen(function*() {
       const response = yield* request<RegistryResponse>("GET", `/schemas/ids/${id}`)
-      const registered = normalizeRegisteredSchema(response, { subject: "", schema: parseSchema(response.schema), schemaType: "AVRO" }, id)
+      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, { subject: "", schema: parseSchema(response.schema), schemaType: "AVRO" }, id))
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
@@ -254,8 +254,7 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
         "GET",
         `/subjects/${encodeURIComponent(subject)}/versions/${version}`
       )
-      const schema = parseSchema(response.schema)
-      const registered = normalizeRegisteredSchema(response, { subject, schema, schemaType: "AVRO" })
+      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, { subject, schema: parseSchema(response.schema), schemaType: "AVRO" }))
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
@@ -270,7 +269,9 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
         `/compatibility/subjects/${encodeURIComponent(requestBody.subject)}/versions/${version}`,
         registryRequestBody(requestBody)
       )
-      return { isCompatible: response.isCompatible ?? response.is_compatible ?? false }
+      const isCompatible = response.isCompatible ?? response.is_compatible
+      if (typeof isCompatible !== "boolean") return yield* Effect.fail(schemaRegistryError("Invalid compatibility response"))
+      return { isCompatible }
     })
 
   return {
@@ -373,7 +374,7 @@ const RegistryResponse = Schema.Struct({
   subject: Schema.optionalKey(Schema.String),
   version: Schema.optionalKey(Schema.Number),
   schema: Schema.optionalKey(Schema.String),
-  schemaType: Schema.optionalKey(Schema.String),
+  schemaType: Schema.optionalKey(Schema.Literal("AVRO")),
   references: Schema.optionalKey(Schema.Array(SchemaReference))
 })
 type RegistryResponse = typeof RegistryResponse.Type
@@ -383,9 +384,10 @@ const normalizeRegisteredSchema = (
   request: RegisterSchemaRequest,
   fallbackId?: number
 ): RegisteredSchema => {
+  response = Schema.decodeUnknownSync(RegistryResponse)(response)
   const id = response.id ?? fallbackId
-  if (id === undefined) {
-    throw schemaRegistryError("Schema Registry response did not include a schema id")
+  if (id === undefined || !Number.isInteger(id) || id < 0 || id > 0xffffffff) {
+    throw schemaRegistryError("Schema Registry response did not include a valid unsigned 32-bit schema id")
   }
   return {
     id,
@@ -442,7 +444,7 @@ const parseSchema = (schema: string | undefined): Avro.AvroSchema => {
     throw schemaRegistryError("Schema Registry response did not include a schema")
   }
   try {
-    return JSON.parse(schema) as Avro.AvroSchema
+    return Schema.decodeUnknownSync(Avro.AvroSchema)(JSON.parse(schema))
   } catch (error) {
     throw schemaRegistryError(`Unable to parse registry schema JSON: ${message(error)}`, error)
   }
@@ -553,3 +555,6 @@ const base64Encode = (value: string): string => {
 const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
   Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
 }
+
+const registryEffect = <A>(thunk: () => A): Effect.Effect<A, SchemaRegistryClientError> =>
+  Effect.try({ try: thunk, catch: (error) => isSchemaRegistryClientError(error) ? error : schemaRegistryError(message(error), error) })

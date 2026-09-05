@@ -132,3 +132,22 @@ const json = (body: unknown) =>
     status: 200,
     headers: { "Content-Type": "application/json" }
   })
+
+it.effect("reports invalid registry responses through the typed error channel", () => Effect.gen(function*() {
+  for (const body of [
+    { schema: "invalid" }, {}, { schema: "42" },
+    { schema: JSON.stringify("string"), schemaType: "JSON" },
+    { schema: JSON.stringify("string"), id: -1 },
+    { schema: JSON.stringify("string"), id: 1.5 }
+  ]) {
+    const client = makeClient({ endpoint: "http://test", fetch: async () => json(body) })
+    const result = yield* client.getById(1).pipe(Effect.catchTag("SchemaRegistryError", () => Effect.succeed("caught")))
+    expect(result).toBe("caught")
+  }
+  const missingId = makeClient({ endpoint: "http://test", fetch: async () => json({}) })
+  expect(yield* missingId.register({ subject: "s", schema: "string" }).pipe(
+    Effect.catchTag("SchemaRegistryError", () => Effect.succeed("caught"))
+  )).toBe("caught")
+  const valid = makeClient({ endpoint: "http://test", fetch: async () => json({ schema: JSON.stringify("string") }) })
+  expect((yield* valid.getById(1)).schemaType).toBe("AVRO")
+}))
