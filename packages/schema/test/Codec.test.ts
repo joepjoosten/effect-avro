@@ -201,3 +201,12 @@ it("rejects unsupported native bigint and numeric enum mappings at construction"
   const codec = avro(Schema.Enum({ A: "A", B: "B" }))
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)("B"))).toBe("B")
 })
+
+it("rejects distinct array and map alternatives instead of discarding values", () => {
+  expect(() => avro(Schema.Union([Schema.Array(Schema.String), Schema.Array(Long)]))).toThrow("Distinct array alternatives")
+  expect(() => avro(Schema.Union([
+    Schema.Record(Schema.String, Schema.String), Schema.Record(Schema.String, Long)
+  ]))).toThrow("Distinct map alternatives")
+  const codec = avro(Schema.NullOr(Schema.Array(Long)))
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)([1]))).toEqual([1])
+})
