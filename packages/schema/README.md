@@ -42,3 +42,5 @@ const Imported = fromAvroSchema(avroJson)
 - Support records, enums, arrays, maps, unions, nullable fields, recursive references, bytes, fixed values, and logical type annotations
 - Omit tagged class `_tag` fields from Avro records while restoring them after decoding
 - Schema-backed internal conversion errors for consistent Effect error reporting
+
+Imported schemas retain their original Avro definitions and metadata when recompiled or embedded. Avro field defaults do not make fields optional in the imported Effect schema.

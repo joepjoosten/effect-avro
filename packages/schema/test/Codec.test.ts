@@ -218,3 +218,19 @@ it("attaches logical attributes directly to fixed definitions", () => {
   const value = new Uint8Array([0, 0, 0, 1])
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
+
+it("preserves imported defaults, logical types and metadata when recompiling", () => {
+  const schema = { type: "record", name: "R", doc: "record", fields: [
+    { name: "x", type: "int", default: 42, aliases: ["oldX"], order: "descending" },
+    { name: "date", type: { type: "int", logicalType: "date" } },
+    { name: "kind", type: { type: "enum", name: "Kind", symbols: ["A", "B"], default: "A" } }
+  ] } as const
+  const imported = fromAvroSchema(schema)
+  expect(toAvroSchema(imported)).toEqual(schema)
+  expect(() => Schema.decodeUnknownSync(imported)({ date: 1, kind: "A" })).toThrow()
+  const codec = avro(imported)
+  const value = { x: 42, date: 1, kind: "B" }
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
+  expect(toAvroSchema(fromAvroSchema({ type: "int", logicalType: "date" }))).toEqual({ type: "int", logicalType: "date" })
+  expect(toAvroSchema(Schema.Struct({ embedded: imported }))).toMatchObject({ fields: [{ type: schema }] })
+})
