@@ -181,8 +181,9 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
 
   const request = <A>(method: string, path: string, body?: unknown) =>
     Effect.tryPromise({
-      try: async () => {
+      try: async (signal) => {
         const init: RequestInit = {
+          signal,
           method,
           headers: makeHeaders(options, body !== undefined),
           ...(body === undefined ? {} : { body: JSON.stringify(body) })

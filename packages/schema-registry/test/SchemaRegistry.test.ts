@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@effect/vitest"
-import { Effect } from "effect"
+import { Effect, Fiber } from "effect"
 import {
   decode,
   decodeConfluentFrame,
@@ -216,4 +216,21 @@ it.effect("uses Confluent raw bytes only for top-level bytes schemas", () => Eff
     value: { data: new Uint8Array([1, 2, 3]) }
   })
   expect([...frame.subarray(5)]).toEqual([6, 1, 2, 3])
+}))
+
+it.effect("aborts an in-flight fetch when its Effect is interrupted", () => Effect.gen(function*() {
+  let started!: () => void
+  const ready = new Promise<void>((resolve) => { started = resolve })
+  let signal: AbortSignal | undefined
+  let aborts = 0
+  const client = makeClient({ endpoint: "http://test", fetch: (_url, init) => new Promise((_resolve, reject) => {
+    signal = init?.signal ?? undefined
+    signal?.addEventListener("abort", () => { aborts++; reject(new Error("aborted")) }, { once: true })
+    started()
+  }) })
+  const fiber = yield* client.getById(1).pipe(Effect.forkChild)
+  yield* Effect.promise(() => ready)
+  yield* Fiber.interrupt(fiber)
+  expect(signal?.aborted).toBe(true)
+  expect(aborts).toBe(1)
 }))
