@@ -195,6 +195,7 @@ export type DecodeResult<A = unknown> = {
 
 export const ParseOptions = Schema.Struct({
   namespace: Schema.optionalKey(Schema.String),
+  definitions: Schema.optionalKey(Schema.Array(AvroSchema)),
   restoreTags: Schema.optionalKey(Schema.Boolean)
 })
 export type ParseOptions = typeof ParseOptions.Type
@@ -244,6 +245,7 @@ export const parse = <A = unknown>(schema: AvroSchema, options: ParseOptions = {
     nodes: new Map(),
     aliases: new Map()
   }
+  for (const definition of options.definitions ?? []) compile(definition, registry, options.namespace)
   const node = compile(schema, registry, options.namespace)
 
   const api: Type<A> = {
