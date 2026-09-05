@@ -115,7 +115,7 @@ class AvroSchemaError extends Schema.TaggedError<AvroSchemaError>()("AvroSchemaE
 type CompileState = {
   readonly options: Required<Pick<ToAvroOptions, "omitTags">> & Omit<ToAvroOptions, "omitTags">
   readonly names: Map<SchemaAST.AST, string>
-  readonly schemas: Map<string, AvroNamedSchema>
+  readonly schemas: Map<string, AvroSchema>
   readonly astByName: Map<string, SchemaAST.AST>
 }
 
@@ -279,7 +279,7 @@ const compileAnnotatedType = (
         ...(name.namespace === undefined ? {} : { namespace: name.namespace }),
         size
       }
-      return withLogicalAnnotations(ast, fixed)
+      return registerNamedSchema(ast, name.fullName, withLogicalAnnotations(ast, fixed), state)
     }
     default:
       throw avroSchemaError(`Unsupported Avro type annotation ${JSON.stringify(annotatedType)}`)
@@ -336,7 +336,9 @@ const compileStringEnum = (
   ast: SchemaAST.AST,
   state: CompileState,
   path: ReadonlyArray<string>
-): AvroEnumSchema => {
+): AvroSchema => {
+  const existing = state.names.get(ast)
+  if (existing !== undefined) return existing
   const name = resolveName(ast, state, path)
   const schema: AvroEnumSchema = {
     type: "enum",
@@ -345,8 +347,7 @@ const compileStringEnum = (
     ...docAndAliases(ast),
     symbols
   }
-  registerNamedSchema(ast, name.fullName, schema, state)
-  return schema
+  return registerNamedSchema(ast, name.fullName, schema, state)
 }
 
 const compileArrayAst = (
@@ -421,8 +422,7 @@ const compileObjectAst = (
     ...(tag === undefined ? {} : { [EffectTagMetadataKey]: tag }),
     fields
   }
-  registerNamedSchema(ast, name.fullName, schema, state)
-  return schema
+  return registerNamedSchema(ast, name.fullName, schema, state)
 }
 
 const compileField = (
@@ -554,11 +554,18 @@ const resolveName = (
   const annotatedName = SchemaAST.resolveAt<string>(AvroNameAnnotationId)(ast)
   const identifier = SchemaAST.resolveIdentifier(ast)
   const title = SchemaAST.resolveTitle(ast)
-  const raw = annotatedName ?? identifier ?? title ?? path[path.length - 1] ?? "Root"
+  const raw = annotatedName ?? identifier ?? title ?? path.join("_")
   const annotatedNamespace = SchemaAST.resolveAt<string>(AvroNamespaceAnnotationId)(ast)
   const split = splitName(raw)
   const namespace = split.namespace ?? annotatedNamespace ?? state.options.namespace
-  const name = sanitizeName(split.name, "Type")
+  let name = sanitizeName(split.name, "Type")
+  if (annotatedName === undefined && identifier === undefined && title === undefined) {
+    const base = name
+    let suffix = 2
+    while (state.astByName.has(fullName(name, namespace)) && state.astByName.get(fullName(name, namespace)) !== ast) {
+      name = `${base}_${suffix++}`
+    }
+  }
   return {
     name,
     ...(namespace === undefined ? {} : { namespace }),
@@ -585,11 +592,19 @@ const sanitizeName = (name: string, fallback: string): string => {
 const registerNamedSchema = (
   ast: SchemaAST.AST,
   fullName: string,
-  schema: AvroNamedSchema,
+  schema: AvroSchema,
   state: CompileState
-) => {
+): AvroSchema => {
+  const existing = state.schemas.get(fullName)
+  if (existing !== undefined) {
+    if (JSON.stringify(existing) !== JSON.stringify(schema)) throw avroSchemaError(`Conflicting Avro name ${fullName}`)
+    state.names.set(ast, fullName)
+    return fullName
+  }
   state.names.set(ast, fullName)
+  state.astByName.set(fullName, ast)
   state.schemas.set(fullName, schema)
+  return schema
 }
 
 const unsupported = (ast: SchemaAST.AST, path: ReadonlyArray<string>) =>

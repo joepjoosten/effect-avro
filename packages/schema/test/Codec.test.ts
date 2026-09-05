@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
-import { avro, Bytes, fromAvroSchema, Long, toAvroSchema } from "../src/index.js"
+import { avro, Bytes, fromAvroSchema, Long, Fixed, toAvroSchema } from "../src/index.js"
 
 class User extends Schema.Class<User>("User")({
   id: Long,
@@ -161,4 +161,21 @@ it("preserves special record keys through imported codecs", () => {
   const result = Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))
   expect(Object.hasOwn(result as object, "__proto__")).toBe(true)
   expect(JSON.stringify(result)).toBe(JSON.stringify(value))
+})
+
+it("interns enum/fixed definitions and generates distinct nested names", () => {
+  const E = Schema.Literals(["A", "B"]).annotate({ identifier: "E" })
+  const schema = toAvroSchema(Schema.Struct({ first: E, second: E, a: Fixed("F", 2), b: Fixed("F", 2) }))
+  expect(schema).toMatchObject({ fields: [
+    { type: { type: "enum", name: "E" } }, { type: "E" },
+    { type: { type: "fixed", name: "F" } }, { type: "F" }
+  ] })
+  expect(() => toAvroSchema(Schema.Struct({ a: Fixed("F", 2), b: Fixed("F", 3) }))).toThrow("Conflicting Avro name")
+  const source = Schema.Struct({
+    a: Schema.Struct({ item: Schema.Struct({ x: Schema.String }) }),
+    b: Schema.Struct({ item: Schema.Struct({ y: Schema.String }) })
+  })
+  const codec = avro(source)
+  const value = { a: { item: { x: "x" } }, b: { item: { y: "y" } } }
+  expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
