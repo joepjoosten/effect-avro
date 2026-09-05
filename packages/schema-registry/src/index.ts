@@ -196,8 +196,8 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
       catch: (error) => isSchemaRegistryClientError(error) ? error : schemaRegistryError(message(error), error)
     })
 
-  const register = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => {
-    const key = subjectSchemaCacheKey(requestBody.subject, requestBody.schema)
+  const register = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => Effect.suspend(() => {
+    const key = subjectSchemaCacheKey(requestBody.subject, requestBody.schema, requestBody.references, requestBody.schemaType)
     const cached = bySubjectSchema.get(key)
     if (useCache && cached !== undefined) {
       return Effect.succeed(cached)
@@ -212,10 +212,10 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
-  }
+  })
 
-  const getId = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => {
-    const key = subjectSchemaCacheKey(requestBody.subject, requestBody.schema)
+  const getId = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => Effect.suspend(() => {
+    const key = subjectSchemaCacheKey(requestBody.subject, requestBody.schema, requestBody.references, requestBody.schemaType)
     const cached = bySubjectSchema.get(key)
     if (useCache && cached !== undefined) {
       return Effect.succeed(cached)
@@ -230,7 +230,7 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
-  }
+  })
 
   const getById = (id: number): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => {
     const cached = byId.get(id)
@@ -418,7 +418,7 @@ const cacheSchema = (
   }
   byId.set(registered.id, registered)
   if (registered.subject !== undefined) {
-    bySubjectSchema.set(subjectSchemaCacheKey(registered.subject, registered.schema), registered)
+    bySubjectSchema.set(subjectSchemaCacheKey(registered.subject, registered.schema, registered.references, registered.schemaType), registered)
   }
 }
 
@@ -450,8 +450,15 @@ const parseSchema = (schema: string | undefined): Avro.AvroSchema => {
   }
 }
 
-const subjectSchemaCacheKey = (subject: string, schema: Avro.AvroSchema) =>
-  `${subject}:${stableStringify(schema)}`
+const subjectSchemaCacheKey = (
+  subject: string,
+  schema: Avro.AvroSchema,
+  references: ReadonlyArray<SchemaReference> = [],
+  schemaType = "AVRO"
+) => stableStringify({
+  subject, schema, schemaType,
+  references: references.map((reference) => stableStringify(reference)).sort()
+})
 
 const schemaFullName = (schema: Avro.AvroSchema): string => {
   const named = findNamedSchema(schema)
