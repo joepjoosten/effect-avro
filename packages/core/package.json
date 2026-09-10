@@ -34,12 +34,12 @@
     "test": "vitest --run"
   },
   "peerDependencies": {
-    "effect": "4.0.0-rc.111"
+    "effect": "4.0.0-rc.112"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.0-rc.111",
+    "@effect/vitest": "4.0.0-rc.112",
     "@types/node": "^25.7.0",
-    "effect": "4.0.0-rc.111",
+    "effect": "4.0.0-rc.112",
     "typescript": "^6.0.3",
     "vitest": "4.1.4"
   }
