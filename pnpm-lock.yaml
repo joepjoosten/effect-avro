@@ -15,14 +15,14 @@ importers:
         specifier: ^0.87.2
         version: 0.87.2
       '@effect/vitest':
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -33,14 +33,14 @@ importers:
   packages/core:
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -58,14 +58,14 @@ importers:
         version: link:../schema-registry
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -80,14 +80,14 @@ importers:
         version: link:../core
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -102,14 +102,14 @@ importers:
         version: link:../core
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -124,14 +124,14 @@ importers:
         version: link:../core
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))
       '@types/node':
         specifier: ^25.7.0
         version: 25.9.4
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -204,10 +204,10 @@ packages:
     resolution: {integrity: sha512-CfiSoaVQO8pZgaMZGw5VvMvRGybsJ2LaSDoLYaqiVGvo/YYPYVR2GzUKY0h1NtIweq/+SQ5XLrvtzPIttWQ0GQ==}
     hasBin: true
 
-  '@effect/vitest@4.0.0-rc.111':
-    resolution: {integrity: sha512-YDaEVT+grREBVMzykRNFtJwGxy02achzT0WXZYwMJA4ukzuB9krkgQ5roc3N6zhC3NQq/j4IyM32/Pcov7AhHw==}
+  '@effect/vitest@4.0.0-rc.112':
+    resolution: {integrity: sha512-mEKh/FI64mt8JK1/v9mpOrJYdnp+UFZdRUBMEdZMiKz7klg6NPqVgg/oeAGH6wOOQc2iAPcfc2H9BbAv1KyzMQ==}
     peerDependencies:
-      effect: ^4.0.0-rc.111
+      effect: ^4.0.0-rc.112
       vitest: '>=4.1.0 <5.0.0'
 
   '@emnapi/core@1.11.1':
@@ -486,8 +486,8 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  effect@4.0.0-rc.111:
-    resolution: {integrity: sha512-ASd5L58EIR0CUNueZNKKjSsyOCd+2alxOAIaTcHaqkJkPsaYSsw5Cg/cfANk5K4Jr2YsX756xvX11shzqsreWA==}
+  effect@4.0.0-rc.112:
+    resolution: {integrity: sha512-wXxwuh1Ywnv4cPRM3Wfa0vDwuOHnZ1TsTgHJkG9XgzND6inhBH9n1vBxhg3iIXOia/OrpmvVmd3lrD4vq6bF3A==}
 
   enquirer@2.4.1:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
@@ -1152,9 +1152,9 @@ snapshots:
 
   '@effect/language-service@0.87.2': {}
 
-  '@effect/vitest@4.0.0-rc.111(effect@4.0.0-rc.111)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))':
+  '@effect/vitest@4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0)))':
     dependencies:
-      effect: 4.0.0-rc.111
+      effect: 4.0.0-rc.112
       vitest: 4.1.4(@types/node@25.9.4)(vite@8.1.0(@types/node@25.9.4)(yaml@2.9.0))
 
   '@emnapi/core@1.11.1':
@@ -1393,9 +1393,8 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  effect@4.0.0-rc.111:
+  effect@4.0.0-rc.112:
     dependencies:
-      '@standard-schema/spec': 1.1.0
       fast-check: 4.9.0
       msgpackr: 2.0.5
 
