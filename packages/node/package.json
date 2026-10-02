@@ -1,6 +1,6 @@
 {
   "name": "@effect-avro/node",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "description": "Node.js Avro object container file helpers for @effect-avro",

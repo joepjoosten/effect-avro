@@ -1,6 +1,6 @@
 {
   "name": "@effect-avro/core",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "description": "Effect-native Avro runtime primitives and codecs",
