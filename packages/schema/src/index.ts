@@ -169,7 +169,7 @@ export const avro = <S extends Schema.Constraint>(
   const codec = BinarySchema.pipe(
     Schema.decodeTo(
       schema,
-      SchemaTransformation.transformOrFail({
+      SchemaTransformation.transformEffect({
         decode: (buffer) =>
           Effect.try({
             try: () => fromAvroRuntime(compiled.type.fromBuffer(buffer), compiled.schema, registry),
@@ -501,7 +501,15 @@ const stripUndefined = (ast: SchemaAST.AST): SchemaAST.AST => {
   if (types.length === 1) {
     return types[0]
   }
-  return new SchemaAST.Union(types, ast.mode, ast.annotations, ast.checks, ast.encoding, ast.context)
+  return new SchemaAST.Union(
+    types,
+    ast.options,
+    ast.annotations,
+    ast.checks,
+    ast.encoding,
+    ast.context,
+    ast.encodingChecks
+  )
 }
 
 const nullable = (schema: AvroSchema): AvroSchema => {
