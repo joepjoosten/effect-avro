@@ -1,13 +1,10 @@
 {
   "compilerOptions": {
     "strict": true,
-    "ignoreDeprecations": "6.0",
     "exactOptionalPropertyTypes": true,
     "moduleDetection": "force",
     "composite": true,
-    "downlevelIteration": true,
     "resolveJsonModule": true,
-    "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "declaration": true,
     "skipLibCheck": true,
@@ -28,7 +25,6 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "baseUrl": ".",
     "target": "ES2022",
     "module": "NodeNext",
     "incremental": true,

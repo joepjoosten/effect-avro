@@ -16,12 +16,12 @@
     "changeset-publish": "pnpm build && changeset publish"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "@effect/language-service": "^0.87.2",
-    "@effect/vitest": "4.0.0",
-    "@types/node": "^25.7.0",
-    "effect": "4.0.0",
-    "typescript": "^6.0.3",
-    "vitest": "4.1.4"
+    "@changesets/cli": "^3.0.3",
+    "@effect/language-service": "^0.87.5",
+    "@effect/vitest": "4.1.3",
+    "@types/node": "^26.6.6",
+    "effect": "4.1.3",
+    "typescript": "^7.0.2",
+    "vitest": "5.1.0"
   }
 }
