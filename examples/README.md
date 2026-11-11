@@ -6,17 +6,17 @@ The examples are Kafka-client agnostic. They use `KafkaMessage` from `@effect-av
 
 ## Files
 
-| File | Use case |
-| --- | --- |
-| `domain.ts` | Shared Effect Schema domain events and Avro schemas. |
-| `support/in-memory-registry.ts` | Small in-memory Confluent Schema Registry test double. |
-| `registry-kafka-events.ts` | Effect Schema encoded events with Schema Registry ids and Kafka message values. |
-| `kafkajs-publisher-adapter.ts` | KafkaJS-style producer service/layer with latest schema lookup, batch publishing, tombstones, and raw JSON fallback. |
-| `local-kafka-decode.ts` | Local/base64 Lambda-style Kafka record decode using Confluent framing and Effect Schema. |
-| `lambda-kafka-dedupe.ts` | Dedupe helpers for self-managed Kafka records and decoded projection updates. |
-| `schema-evolution.ts` | Compatibility checks and registering a new event schema version. |
-| `dead-letter.ts` | `Effect.catchTag` based decode handling for dead-letter workflows. |
-| `node-container-archive.ts` | Node object-container archive files generated from Effect Schema. |
+| File                            | Use case                                                                                                             |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `domain.ts`                     | Shared Effect Schema domain events and Avro schemas.                                                                 |
+| `support/in-memory-registry.ts` | Small in-memory Confluent Schema Registry test double.                                                               |
+| `registry-kafka-events.ts`      | Effect Schema encoded events with Schema Registry ids and Kafka message values.                                      |
+| `kafkajs-publisher-adapter.ts`  | KafkaJS-style producer service/layer with latest schema lookup, batch publishing, tombstones, and raw JSON fallback. |
+| `local-kafka-decode.ts`         | Local/base64 Lambda-style Kafka record decode using Confluent framing and Effect Schema.                             |
+| `lambda-kafka-dedupe.ts`        | Dedupe helpers for self-managed Kafka records and decoded projection updates.                                        |
+| `schema-evolution.ts`           | Compatibility checks and registering a new event schema version.                                                     |
+| `dead-letter.ts`                | `Effect.catchTag` based decode handling for dead-letter workflows.                                                   |
+| `node-container-archive.ts`     | Node object-container archive files generated from Effect Schema.                                                    |
 
 ## Typecheck
 

@@ -1,21 +1,21 @@
 import { describe, expect, it } from "@effect/vitest"
+import { Effect, Fiber, FileSystem, PlatformError } from "effect"
 import { randomBytes } from "node:crypto"
 import * as Fs from "node:fs/promises"
 import * as Os from "node:os"
 import * as Path from "node:path"
-import { Effect, Fiber, FileSystem, PlatformError } from "effect"
 import {
-  AvroContainerError,
+  type AvroContainerError,
   AvroNode,
   decodeContainer,
   decodeContainerRecords,
-  encodeContainerIterable,
   encodeContainer,
-  readFile,
+  encodeContainerIterable,
   readContainerFile,
   readContainerIterable,
-  writeFile,
-  writeContainerFile
+  readFile,
+  writeContainerFile,
+  writeFile
 } from "../src/index.js"
 
 describe("@effect-avro/node", () => {
@@ -120,7 +120,7 @@ const platformError = (method: string, path: string, cause: unknown) =>
   })
 
 it("preserves special metadata keys", () => {
-  const metadata = JSON.parse('{"__proto__":"data","constructor":"ctor"}')
+  const metadata = JSON.parse("{\"__proto__\":\"data\",\"constructor\":\"ctor\"}")
   const result = decodeContainer(encodeContainer("null", [], { metadata })).metadata
   expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
   expect(Object.hasOwn(result, "__proto__")).toBe(true)
@@ -140,8 +140,14 @@ it("streams records before EOF and closes an abandoned source", async () => {
   let pulls = 0
   let closed = false
   const source = async function*() {
-    try { pulls++; yield file; pulls++; await new Promise(() => {}) }
-    finally { closed = true }
+    try {
+      pulls++
+      yield file
+      pulls++
+      await new Promise(() => {})
+    } finally {
+      closed = true
+    }
   }
   const records = decodeContainerRecords<number>(source())
   expect(await records.next()).toMatchObject({ value: 1, done: false })
@@ -154,7 +160,16 @@ it("decodes arbitrary chunk boundaries and applies writer backpressure", async (
   for (const codec of ["null", "deflate"] as const) {
     let produced = 0
     let closed = false
-    const source = async function*() { try { for (const value of [1, 2, 3]) { produced++; yield value } } finally { closed = true } }
+    const source = async function*() {
+      try {
+        for (const value of [1, 2, 3]) {
+          produced++
+          yield value
+        }
+      } finally {
+        closed = true
+      }
+    }
     const output = encodeContainerIterable("int", source(), { blockSize: 1, codec })
     const header = await output.next()
     expect(produced).toBe(0)
@@ -164,33 +179,48 @@ it("decodes arbitrary chunk boundaries and applies writer backpressure", async (
     for await (const chunk of output) chunks.push(chunk)
     expect(closed).toBe(true)
     const file = Buffer.concat(chunks)
-    const values: unknown[] = []
-    for await (const value of decodeContainerRecords(async function*() {
-      for (const byte of file) yield new Uint8Array([byte])
-    }())) values.push(value)
+    const values: Array<unknown> = []
+    for await (
+      const value of decodeContainerRecords(async function*() {
+        for (const byte of file) yield new Uint8Array([byte])
+      }())
+    ) values.push(value)
     expect(values).toEqual([1, 2, 3])
     expect(decodeContainer(file).values).toEqual(values)
   }
 })
 
-it.effect("closes a pending input iterator when interrupted", () => Effect.gen(function*() {
-  let started!: () => void
-  const ready = new Promise<void>((resolve) => { started = resolve })
-  let returned = 0
-  const input: AsyncIterable<Uint8Array> = { [Symbol.asyncIterator]: () => ({
-    next: () => { started(); return new Promise(() => {}) },
-    return: async () => { returned++; return { done: true, value: undefined } }
-  }) }
-  const fiber = yield* readContainerIterable(input).pipe(Effect.forkChild)
-  yield* Effect.promise(() => ready)
-  yield* Fiber.interrupt(fiber)
-  expect(returned).toBe(1)
-}))
+it.effect("closes a pending input iterator when interrupted", () =>
+  Effect.gen(function*() {
+    let started!: () => void
+    const ready = new Promise<void>((resolve) => {
+      started = resolve
+    })
+    let returned = 0
+    const input: AsyncIterable<Uint8Array> = {
+      [Symbol.asyncIterator]: () => ({
+        next: () => {
+          started()
+          return new Promise(() => {})
+        },
+        return: async () => {
+          returned++
+          return { done: true, value: undefined }
+        }
+      })
+    }
+    const fiber = yield* readContainerIterable(input).pipe(Effect.forkChild)
+    yield* Effect.promise(() => ready)
+    yield* Fiber.interrupt(fiber)
+    expect(returned).toBe(1)
+  }))
 
 it("splits streaming blocks by bytes and closes a cancelled writer", async () => {
   for (const codec of ["null", "deflate"] as const) {
-    const chunks: Buffer[] = []
-    for await (const chunk of encodeContainerIterable("string", ["aa", "bb", "cc"], { maxBlockBytes: 4, codec })) chunks.push(chunk)
+    const chunks: Array<Buffer> = []
+    for await (const chunk of encodeContainerIterable("string", ["aa", "bb", "cc"], { maxBlockBytes: 4, codec })) {
+      chunks.push(chunk)
+    }
     expect(chunks).toHaveLength(4)
     expect(decodeContainer(Buffer.concat(chunks), { limits: { maxBlockBytes: 4 } }).values).toEqual(["aa", "bb", "cc"])
   }
@@ -198,7 +228,14 @@ it("splits streaming blocks by bytes and closes a cancelled writer", async () =>
   await oversized.next()
   await expect(oversized.next()).rejects.toThrow("record exceeds maxBlockBytes")
   let closed = false
-  const source = async function*() { try { yield 1; await new Promise(() => {}) } finally { closed = true } }
+  const source = async function*() {
+    try {
+      yield 1
+      await new Promise(() => {})
+    } finally {
+      closed = true
+    }
+  }
   const writer = encodeContainerIterable("int", source(), { blockSize: 1 })
   await writer.next()
   await writer.next()

@@ -11,8 +11,8 @@ pnpm add @effect-avro/schema-registry @effect-avro/core effect
 ## Usage
 
 ```ts
+import { decode, encode, SchemaRegistry } from "@effect-avro/schema-registry"
 import { Effect } from "effect"
-import { SchemaRegistry, decode, encode } from "@effect-avro/schema-registry"
 
 const schema = {
   type: "record",

@@ -13,8 +13,8 @@ pnpm add @effect-avro/schema effect
 ## Usage
 
 ```ts
-import { Schema } from "effect"
 import { avro, fromAvroSchema, Long, toAvroSchema } from "@effect-avro/schema"
+import { Schema } from "effect"
 
 class User extends Schema.Class<User>("User")({
   id: Long,

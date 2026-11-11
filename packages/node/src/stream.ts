@@ -1,11 +1,21 @@
+import * as Avro from "@effect-avro/core"
 import { Buffer } from "node:buffer"
 import { randomBytes } from "node:crypto"
-import * as Avro from "@effect-avro/core"
 import type { ContainerEncodeOptions, ContainerFile } from "./index.js"
 import {
-  BinaryWriter, avroContainerError, codecMetadataKey, decodeBlock, encodeBlock,
-  magic, parseCodec, parseSchema, schemaMetadataKey, syncMarkerSize,
-  normalizeMetadata, writeMetadata, toBuffer
+  avroContainerError,
+  BinaryWriter,
+  codecMetadataKey,
+  decodeBlock,
+  encodeBlock,
+  magic,
+  normalizeMetadata,
+  parseCodec,
+  parseSchema,
+  schemaMetadataKey,
+  syncMarkerSize,
+  toBuffer,
+  writeMetadata
 } from "./internal/container.js"
 
 export type ContainerHeader = Omit<ContainerFile<never>, "values">
@@ -22,15 +32,21 @@ export async function* decodeContainerEvents<A = unknown>(
   const budget = new Avro.DecodeBudget(options?.limits)
   const reader = new AsyncByteReader(input, budget.limits, signal)
   try {
-    if (!(await reader.readFixed(magic.length)).equals(magic)) throw avroContainerError("Invalid Avro object container magic header")
+    if (!(await reader.readFixed(magic.length)).equals(magic)) {
+      throw avroContainerError("Invalid Avro object container magic header")
+    }
     const metadata: Record<string, Buffer> = {}
     while (true) {
       const count = await reader.readLong()
       if (count === 0) break
       const actualCount = Math.abs(count)
-      if (actualCount > budget.limits.maxCollectionItems) throw avroContainerError("Avro metadata maxCollectionItems exceeded")
+      if (actualCount > budget.limits.maxCollectionItems) {
+        throw avroContainerError("Avro metadata maxCollectionItems exceeded")
+      }
       const size = count < 0 ? await reader.readLong() : undefined
-      if (size !== undefined && (size < 0 || size > budget.limits.maxBytes)) throw avroContainerError("Invalid metadata block size")
+      if (size !== undefined && (size < 0 || size > budget.limits.maxBytes)) {
+        throw avroContainerError("Invalid metadata block size")
+      }
       const end = size === undefined ? undefined : reader.position + size
       for (let i = 0; i < actualCount; i++) {
         const key = (await reader.readBytes()).toString("utf8")
@@ -54,7 +70,9 @@ export async function* decodeContainerEvents<A = unknown>(
       const size = await reader.readLong()
       if (size < 0 || size > budget.limits.maxBytes) throw avroContainerError("Invalid or oversized container block")
       const compressed = await reader.readFixed(size)
-      if (!(await reader.readFixed(syncMarkerSize)).equals(syncMarker)) throw avroContainerError("Avro object container sync marker mismatch")
+      if (!(await reader.readFixed(syncMarkerSize)).equals(syncMarker)) {
+        throw avroContainerError("Avro object container sync marker mismatch")
+      }
       const block = decodeBlock(codec, compressed, budget.limits.maxBlockBytes)
       let offset = 0
       for (let i = 0; i < count; i++) {
@@ -102,7 +120,7 @@ export async function* encodeContainerIterable<A>(
   writeMetadata(metadata, header)
   header.writeBuffer(syncMarker)
   yield header.toBuffer()
-  let chunks: Buffer[] = []
+  let chunks: Array<Buffer> = []
   let bytes = 0
   const flush = () => {
     const encoded = encodeBlock(codec, Buffer.concat(chunks))
@@ -127,6 +145,8 @@ export async function* encodeContainerIterable<A>(
 }
 
 class AsyncByteReader {
+  private readonly limits: Required<Avro.DecodeLimits>
+  private readonly signal: AbortSignal | undefined
   private readonly iterator: AsyncIterator<Buffer | Uint8Array>
   private current: Uint8Array = new Uint8Array()
   private offset = 0
@@ -134,9 +154,13 @@ class AsyncByteReader {
   private ended = false
   private closed = false
   position = 0
-  private readonly onAbort = () => { void this.close().catch(() => undefined) }
+  private readonly onAbort = () => {
+    void this.close().catch(() => undefined)
+  }
 
-  constructor(input: AsyncIterable<Buffer | Uint8Array>, private readonly limits: Required<Avro.DecodeLimits>, private readonly signal?: AbortSignal) {
+  constructor(input: AsyncIterable<Buffer | Uint8Array>, limits: Required<Avro.DecodeLimits>, signal?: AbortSignal) {
+    this.limits = limits
+    this.signal = signal
     this.iterator = input[Symbol.asyncIterator]()
     signal?.addEventListener("abort", this.onAbort, { once: true })
   }
@@ -146,7 +170,10 @@ class AsyncByteReader {
     this.closed = true
     this.signal?.removeEventListener("abort", this.onAbort)
     const cleanup = this.iterator.return?.()
-    if (this.signal?.aborted) { void cleanup?.catch(() => undefined); return }
+    if (this.signal?.aborted) {
+      void cleanup?.catch(() => undefined)
+      return
+    }
     await cleanup
   }
 
@@ -156,11 +183,20 @@ class AsyncByteReader {
     const pending = this.iterator.next()
     if (signal === undefined) return pending
     return new Promise((resolve, reject) => {
-      const abort = () => { signal.removeEventListener("abort", abort); reject(avroContainerError("Avro container stream interrupted", signal.reason)) }
+      const abort = () => {
+        signal.removeEventListener("abort", abort)
+        reject(avroContainerError("Avro container stream interrupted", signal.reason))
+      }
       signal.addEventListener("abort", abort, { once: true })
       pending.then(
-        (value) => { signal.removeEventListener("abort", abort); resolve(value) },
-        (error) => { signal.removeEventListener("abort", abort); reject(error) }
+        (value) => {
+          signal.removeEventListener("abort", abort)
+          resolve(value)
+        },
+        (error) => {
+          signal.removeEventListener("abort", abort)
+          reject(error)
+        }
       )
       if (signal.aborted) abort()
     })
@@ -171,7 +207,10 @@ class AsyncByteReader {
     while (this.offset === this.current.length) {
       if (this.ended) return false
       const next = await this.nextChunk()
-      if (next.done) { this.ended = true; return false }
+      if (next.done) {
+        this.ended = true
+        return false
+      }
       this.current = next.value
       this.offset = 0
       this.received += next.value.length
@@ -181,7 +220,9 @@ class AsyncByteReader {
   }
 
   async readFixed(size: number): Promise<Buffer> {
-    if (!Number.isSafeInteger(size) || size < 0 || size > this.limits.maxBytes) throw avroContainerError("Invalid Avro read size")
+    if (!Number.isSafeInteger(size) || size < 0 || size > this.limits.maxBytes) {
+      throw avroContainerError("Invalid Avro read size")
+    }
     const result = Buffer.allocUnsafe(size)
     let offset = 0
     while (offset < size) {
@@ -195,7 +236,9 @@ class AsyncByteReader {
     return result
   }
 
-  async readBytes(): Promise<Buffer> { return this.readFixed(await this.readLong()) }
+  async readBytes(): Promise<Buffer> {
+    return this.readFixed(await this.readLong())
+  }
 
   async readLong(): Promise<number> {
     const value = await this.readLongOrEnd()
@@ -215,7 +258,9 @@ class AsyncByteReader {
       if (shift > 63n) throw avroContainerError("Invalid Avro variable-length integer")
     }
     const result = Number((value >> 1n) ^ -(value & 1n))
-    if (!Number.isSafeInteger(result)) throw avroContainerError("Avro long is outside the JavaScript safe integer range")
+    if (!Number.isSafeInteger(result)) {
+      throw avroContainerError("Avro long is outside the JavaScript safe integer range")
+    }
     return result
   }
 }

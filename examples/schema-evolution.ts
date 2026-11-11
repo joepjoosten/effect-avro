@@ -1,12 +1,8 @@
-import { Effect, Schema } from "effect"
 import type { AvroSchema } from "@effect-avro/core"
 import { Long, toAvroSchema } from "@effect-avro/schema"
 import { checkCompatibility, register, SchemaRegistry } from "@effect-avro/schema-registry"
-import {
-  OrderCancelled,
-  OrderPaid,
-  orderValueSubject
-} from "./domain.js"
+import { Effect, Schema } from "effect"
+import { OrderCancelled, OrderPaid, orderValueSubject } from "./domain.js"
 import { makeInMemorySchemaRegistry } from "./support/in-memory-registry.js"
 
 export class OrderPlacedV2 extends Schema.TaggedClass<OrderPlacedV2>()("OrderPlaced", {

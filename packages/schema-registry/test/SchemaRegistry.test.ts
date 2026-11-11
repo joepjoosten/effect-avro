@@ -7,7 +7,7 @@ import {
   encode,
   encodeConfluentFrame,
   encodeWithRegistry,
-  InvalidRegistryFrame,
+  type InvalidRegistryFrame,
   makeClient,
   SchemaRegistry,
   subjectName
@@ -133,104 +133,147 @@ const json = (body: unknown) =>
     headers: { "Content-Type": "application/json" }
   })
 
-it.effect("reports invalid registry responses through the typed error channel", () => Effect.gen(function*() {
-  for (const body of [
-    { schema: "invalid" }, {}, { schema: "42" },
-    { schema: JSON.stringify("string"), schemaType: "JSON" },
-    { schema: JSON.stringify("string"), id: -1 },
-    { schema: JSON.stringify("string"), id: 1.5 }
-  ]) {
-    const client = makeClient({ endpoint: "http://test", fetch: async () => json(body) })
-    const result = yield* client.getById(1).pipe(Effect.catchTag("SchemaRegistryError", () => Effect.succeed("caught")))
-    expect(result).toBe("caught")
-  }
-  const missingId = makeClient({ endpoint: "http://test", fetch: async () => json({}) })
-  expect(yield* missingId.register({ subject: "s", schema: "string" }).pipe(
-    Effect.catchTag("SchemaRegistryError", () => Effect.succeed("caught"))
-  )).toBe("caught")
-  const valid = makeClient({ endpoint: "http://test", fetch: async () => json({ schema: JSON.stringify("string") }) })
-  expect((yield* valid.getById(1)).schemaType).toBe("AVRO")
-}))
-
-it.effect("keys registration caches by normalized references and reads caches lazily", () => Effect.gen(function*() {
-  let calls = 0
-  const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: ++calls }) })
-  const base = { subject: "s", schema: "E" }
-  const first = client.register({ ...base, references: [{ name: "E", subject: "e", version: 1 }] })
-  expect((yield* first).id).toBe(1)
-  expect((yield* first).id).toBe(1)
-  expect((yield* client.getId({ ...base, references: [{ name: "E", subject: "e", version: 2 }] })).id).toBe(2)
-  expect((yield* client.register({ ...base, references: [{ name: "E", subject: "other", version: 2 }] })).id).toBe(3)
-  const references = [{ name: "E", subject: "e", version: 1 }, { name: "F", subject: "f", version: 1 }]
-  const registered = yield* client.register({ ...base, references })
-  expect((yield* client.getId({ ...base, references: [...references].reverse() })).id).toBe(registered.id)
-  expect(calls).toBe(4)
-}))
-
-it.effect("resolves transitive references and caches exact subject versions", () => Effect.gen(function*() {
-  const root = { type: "record", name: "Root", fields: [{ name: "outer", type: "Outer" }] } as const
-  const outer = { type: "record", name: "Outer", fields: [{ name: "leaf", type: "Leaf" }] } as const
-  const leaf = { type: "enum", name: "Leaf", symbols: ["X"] } as const
-  const references = [{ name: "Outer", subject: "outer", version: 1 }]
-  const paths: string[] = []
-  const client = makeClient({ endpoint: "http://test", fetch: async (url) => {
-    const path = new URL(url).pathname
-    paths.push(path)
-    if (path === "/subjects/s/versions") return json({ id: 1 })
-    if (path === "/subjects/outer/versions/1") return json({ id: 2, schema: JSON.stringify(outer), references: [{ name: "Leaf", subject: "leaf", version: 2 }] })
-    if (path === "/subjects/leaf/versions/2") return json({ id: 3, schema: JSON.stringify(leaf) })
-    return new Response("missing", { status: 404 })
-  } })
-  const value = { outer: { leaf: "X" } }
-  const bytes = yield* encodeWithRegistry(client, { subject: "s", schema: root, references, value })
-  expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
-  expect(paths).toEqual(["/subjects/s/versions", "/subjects/outer/versions/1", "/subjects/leaf/versions/2"])
-}))
-
-it.effect("resolves cyclic named dependencies without recursive fetching", () => Effect.gen(function*() {
-  const a = { type: "record", name: "A", fields: [{ name: "next", type: ["null", "B"] }] } as const
-  const b = { type: "record", name: "B", fields: [{ name: "next", type: ["null", "A"] }] } as const
-  const client = makeClient({ endpoint: "http://test", fetch: async (url) => {
-    const path = new URL(url).pathname
-    if (path === "/subjects/s/versions") return json({ id: 1 })
-    if (path === "/subjects/b/versions/1") return json({ id: 2, schema: JSON.stringify(b), references: [{ name: "A", subject: "a", version: 1 }] })
-    return json({ id: 1, schema: JSON.stringify(a), references: [{ name: "B", subject: "b", version: 1 }] })
-  } })
-  const value = { next: { next: null } }
-  const bytes = yield* encodeWithRegistry(client, { subject: "s", schema: a, references: [{ name: "B", subject: "b", version: 1 }], value })
-  expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
-}))
-
-it.effect("uses Confluent raw bytes only for top-level bytes schemas", () => Effect.gen(function*() {
-  for (const schema of ["bytes", { type: "bytes" }] as const) {
-    const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: 1 }) })
-    for (const value of [new Uint8Array(), new Uint8Array([1, 2, 3]), new Uint8Array([255, 0])]) {
-      const expected = new Uint8Array([0, 0, 0, 0, 1, ...value])
-      expect(yield* encodeWithRegistry(client, { subject: "s", schema, value })).toEqual(expected)
-      expect(yield* decodeWithRegistry(client, expected)).toEqual(value)
+it.effect("reports invalid registry responses through the typed error channel", () =>
+  Effect.gen(function*() {
+    for (
+      const body of [
+        { schema: "invalid" },
+        {},
+        { schema: "42" },
+        { schema: JSON.stringify("string"), schemaType: "JSON" },
+        { schema: JSON.stringify("string"), id: -1 },
+        { schema: JSON.stringify("string"), id: 1.5 }
+      ]
+    ) {
+      const client = makeClient({ endpoint: "http://test", fetch: async () => json(body) })
+      const result = yield* client.getById(1).pipe(
+        Effect.catchTag("SchemaRegistryError", () => Effect.succeed("caught"))
+      )
+      expect(result).toBe("caught")
     }
-  }
-  const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: 2 }) })
-  const frame = yield* encodeWithRegistry(client, {
-    subject: "record", schema: { type: "record", name: "R", fields: [{ name: "data", type: "bytes" }] },
-    value: { data: new Uint8Array([1, 2, 3]) }
-  })
-  expect([...frame.subarray(5)]).toEqual([6, 1, 2, 3])
-}))
+    const missingId = makeClient({ endpoint: "http://test", fetch: async () => json({}) })
+    expect(
+      yield* missingId.register({ subject: "s", schema: "string" }).pipe(
+        Effect.catchTag("SchemaRegistryError", () => Effect.succeed("caught"))
+      )
+    ).toBe("caught")
+    const valid = makeClient({ endpoint: "http://test", fetch: async () => json({ schema: JSON.stringify("string") }) })
+    expect((yield* valid.getById(1)).schemaType).toBe("AVRO")
+  }))
 
-it.effect("aborts an in-flight fetch when its Effect is interrupted", () => Effect.gen(function*() {
-  let started!: () => void
-  const ready = new Promise<void>((resolve) => { started = resolve })
-  let signal: AbortSignal | undefined
-  let aborts = 0
-  const client = makeClient({ endpoint: "http://test", fetch: (_url, init) => new Promise((_resolve, reject) => {
-    signal = init?.signal ?? undefined
-    signal?.addEventListener("abort", () => { aborts++; reject(new Error("aborted")) }, { once: true })
-    started()
-  }) })
-  const fiber = yield* client.getById(1).pipe(Effect.forkChild)
-  yield* Effect.promise(() => ready)
-  yield* Fiber.interrupt(fiber)
-  expect(signal?.aborted).toBe(true)
-  expect(aborts).toBe(1)
-}))
+it.effect("keys registration caches by normalized references and reads caches lazily", () =>
+  Effect.gen(function*() {
+    let calls = 0
+    const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: ++calls }) })
+    const base = { subject: "s", schema: "E" }
+    const first = client.register({ ...base, references: [{ name: "E", subject: "e", version: 1 }] })
+    expect((yield* first).id).toBe(1)
+    expect((yield* first).id).toBe(1)
+    expect((yield* client.getId({ ...base, references: [{ name: "E", subject: "e", version: 2 }] })).id).toBe(2)
+    expect((yield* client.register({ ...base, references: [{ name: "E", subject: "other", version: 2 }] })).id).toBe(3)
+    const references = [{ name: "E", subject: "e", version: 1 }, { name: "F", subject: "f", version: 1 }]
+    const registered = yield* client.register({ ...base, references })
+    expect((yield* client.getId({ ...base, references: [...references].reverse() })).id).toBe(registered.id)
+    expect(calls).toBe(4)
+  }))
+
+it.effect("resolves transitive references and caches exact subject versions", () =>
+  Effect.gen(function*() {
+    const root = { type: "record", name: "Root", fields: [{ name: "outer", type: "Outer" }] } as const
+    const outer = { type: "record", name: "Outer", fields: [{ name: "leaf", type: "Leaf" }] } as const
+    const leaf = { type: "enum", name: "Leaf", symbols: ["X"] } as const
+    const references = [{ name: "Outer", subject: "outer", version: 1 }]
+    const paths: Array<string> = []
+    const client = makeClient({
+      endpoint: "http://test",
+      fetch: async (url) => {
+        const path = new URL(url).pathname
+        paths.push(path)
+        if (path === "/subjects/s/versions") return json({ id: 1 })
+        if (path === "/subjects/outer/versions/1") {
+          return json({
+            id: 2,
+            schema: JSON.stringify(outer),
+            references: [{ name: "Leaf", subject: "leaf", version: 2 }]
+          })
+        }
+        if (path === "/subjects/leaf/versions/2") return json({ id: 3, schema: JSON.stringify(leaf) })
+        return new Response("missing", { status: 404 })
+      }
+    })
+    const value = { outer: { leaf: "X" } }
+    const bytes = yield* encodeWithRegistry(client, { subject: "s", schema: root, references, value })
+    expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
+    expect(paths).toEqual(["/subjects/s/versions", "/subjects/outer/versions/1", "/subjects/leaf/versions/2"])
+  }))
+
+it.effect("resolves cyclic named dependencies without recursive fetching", () =>
+  Effect.gen(function*() {
+    const a = { type: "record", name: "A", fields: [{ name: "next", type: ["null", "B"] }] } as const
+    const b = { type: "record", name: "B", fields: [{ name: "next", type: ["null", "A"] }] } as const
+    const client = makeClient({
+      endpoint: "http://test",
+      fetch: async (url) => {
+        const path = new URL(url).pathname
+        if (path === "/subjects/s/versions") return json({ id: 1 })
+        if (path === "/subjects/b/versions/1") {
+          return json({ id: 2, schema: JSON.stringify(b), references: [{ name: "A", subject: "a", version: 1 }] })
+        }
+        return json({ id: 1, schema: JSON.stringify(a), references: [{ name: "B", subject: "b", version: 1 }] })
+      }
+    })
+    const value = { next: { next: null } }
+    const bytes = yield* encodeWithRegistry(client, {
+      subject: "s",
+      schema: a,
+      references: [{ name: "B", subject: "b", version: 1 }],
+      value
+    })
+    expect(yield* decodeWithRegistry(client, bytes)).toEqual(value)
+  }))
+
+it.effect("uses Confluent raw bytes only for top-level bytes schemas", () =>
+  Effect.gen(function*() {
+    for (const schema of ["bytes", { type: "bytes" }] as const) {
+      const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: 1 }) })
+      for (const value of [new Uint8Array(), new Uint8Array([1, 2, 3]), new Uint8Array([255, 0])]) {
+        const expected = new Uint8Array([0, 0, 0, 0, 1, ...value])
+        expect(yield* encodeWithRegistry(client, { subject: "s", schema, value })).toEqual(expected)
+        expect(yield* decodeWithRegistry(client, expected)).toEqual(value)
+      }
+    }
+    const client = makeClient({ endpoint: "http://test", fetch: async () => json({ id: 2 }) })
+    const frame = yield* encodeWithRegistry(client, {
+      subject: "record",
+      schema: { type: "record", name: "R", fields: [{ name: "data", type: "bytes" }] },
+      value: { data: new Uint8Array([1, 2, 3]) }
+    })
+    expect([...frame.subarray(5)]).toEqual([6, 1, 2, 3])
+  }))
+
+it.effect("aborts an in-flight fetch when its Effect is interrupted", () =>
+  Effect.gen(function*() {
+    let started!: () => void
+    const ready = new Promise<void>((resolve) => {
+      started = resolve
+    })
+    let signal: AbortSignal | undefined
+    let aborts = 0
+    const client = makeClient({
+      endpoint: "http://test",
+      fetch: (_url, init) =>
+        new Promise((_resolve, reject) => {
+          signal = init?.signal ?? undefined
+          signal?.addEventListener("abort", () => {
+            aborts++
+            reject(new Error("aborted"))
+          }, { once: true })
+          started()
+        })
+    })
+    const fiber = yield* client.getById(1).pipe(Effect.forkChild)
+    yield* Effect.promise(() => ready)
+    yield* Fiber.interrupt(fiber)
+    expect(signal?.aborted).toBe(true)
+    expect(aborts).toBe(1)
+  }))

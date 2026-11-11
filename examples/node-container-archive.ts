@@ -1,9 +1,6 @@
-import { Effect } from "effect"
 import { readFile, writeFile } from "@effect-avro/node"
-import {
-  OrderSnapshot,
-  OrderSnapshotAvroSchema
-} from "./domain.js"
+import { Effect } from "effect"
+import { OrderSnapshot, OrderSnapshotAvroSchema } from "./domain.js"
 
 const snapshots = [
   new OrderSnapshot({

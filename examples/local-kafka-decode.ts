@@ -1,10 +1,15 @@
-import { Buffer } from "node:buffer"
-import { Effect, Schema } from "effect"
 import type { KafkaMessage } from "@effect-avro/kafka"
 import { SchemaRegistry, type SchemaRegistryClientError } from "@effect-avro/schema-registry"
-import { OrderPlaced, type OrderEvent } from "./domain.js"
-import { decodeOrderMessage, encodeOrderMessage, type MissingKafkaValue, type OrderEventDecodeError } from "./registry-kafka-events.js"
-import { SelfManagedKafkaRecord } from "./lambda-kafka-dedupe.js"
+import { Effect, Schema } from "effect"
+import { Buffer } from "node:buffer"
+import { type OrderEvent, OrderPlaced } from "./domain.js"
+import type { SelfManagedKafkaRecord } from "./lambda-kafka-dedupe.js"
+import {
+  decodeOrderMessage,
+  encodeOrderMessage,
+  type MissingKafkaValue,
+  type OrderEventDecodeError
+} from "./registry-kafka-events.js"
 import { makeInMemorySchemaRegistry } from "./support/in-memory-registry.js"
 
 export class Base64KafkaDecodeError extends Schema.TaggedError<Base64KafkaDecodeError>()(
@@ -55,10 +60,11 @@ export const encodeLocalKafkaRecord = (
 const decodeBase64 = (value: string): Effect.Effect<Uint8Array, Base64KafkaDecodeError> =>
   Effect.try({
     try: () => Buffer.from(value, "base64"),
-    catch: (cause) => new Base64KafkaDecodeError({
-      message: "Unable to decode base64 Kafka payload",
-      cause
-    })
+    catch: (cause) =>
+      new Base64KafkaDecodeError({
+        message: "Unable to decode base64 Kafka payload",
+        cause
+      })
   })
 
 const registry = makeInMemorySchemaRegistry()
@@ -69,12 +75,14 @@ const RegistryLive = SchemaRegistry.layer({
 })
 
 export const program = Effect.gen(function*() {
-  const produced = yield* encodeOrderMessage(new OrderPlaced({
-    orderId: "ord_1000",
-    customerId: "cus_123",
-    totalCents: 4999,
-    occurredAt: "2026-06-24T08:00:00.000Z"
-  }))
+  const produced = yield* encodeOrderMessage(
+    new OrderPlaced({
+      orderId: "ord_1000",
+      customerId: "cus_123",
+      totalCents: 4999,
+      occurredAt: "2026-06-24T08:00:00.000Z"
+    })
+  )
 
   const localRecord = encodeLocalKafkaRecord(produced)
   const event = yield* decodeLocalKafkaRecord(localRecord)

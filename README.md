@@ -4,13 +4,13 @@ Effect v4 packages for working with Apache Avro schemas and binary data.
 
 This repository publishes five packages under the `@effect-avro` npm scope:
 
-| Package | Purpose |
-| --- | --- |
-| `@effect-avro/core` | Native Avro schema model plus binary encoder/decoder. |
-| `@effect-avro/schema` | Effect Schema v4 to Avro compiler, Avro to Effect Schema importer, and `Schema.Codec` integration. |
-| `@effect-avro/schema-registry` | Confluent Schema Registry client and wire framing. |
-| `@effect-avro/kafka` | Kafka key/value serializers and deserializers. |
-| `@effect-avro/node` | Node.js Avro object-container file helpers. |
+| Package                        | Purpose                                                                                            |
+| ------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `@effect-avro/core`            | Native Avro schema model plus binary encoder/decoder.                                              |
+| `@effect-avro/schema`          | Effect Schema v4 to Avro compiler, Avro to Effect Schema importer, and `Schema.Codec` integration. |
+| `@effect-avro/schema-registry` | Confluent Schema Registry client and wire framing.                                                 |
+| `@effect-avro/kafka`           | Kafka key/value serializers and deserializers.                                                     |
+| `@effect-avro/node`            | Node.js Avro object-container file helpers.                                                        |
 
 The packages target Effect v4 and currently use `effect@4.1.3`.
 
@@ -37,8 +37,8 @@ pnpm add @effect-avro/schema-registry @effect-avro/kafka @effect-avro/node effec
 ## Effect Schema Codec
 
 ```ts
-import { Schema } from "effect"
 import { avro, Long } from "@effect-avro/schema"
+import { Schema } from "effect"
 
 class User extends Schema.Class<User>("User")({
   id: Long,
@@ -92,9 +92,9 @@ Public data models are exported as Effect Schema values plus matching types, for
 The integration packages expose Effect services as their primary API:
 
 ```ts
-import { Effect, Layer } from "effect"
+import { decodeValue, KafkaAvro, serializeRegistryValue } from "@effect-avro/kafka"
 import { SchemaRegistry } from "@effect-avro/schema-registry"
-import { KafkaAvro, decodeValue, serializeRegistryValue } from "@effect-avro/kafka"
+import { Effect, Layer } from "effect"
 
 const RegistryLive = SchemaRegistry.layer({
   endpoint: "http://localhost:8081"
@@ -133,15 +133,17 @@ The [examples](./examples) directory includes type-checked workflows for:
 
 ```sh
 pnpm install
-pnpm check
+pnpm check          # type check with effect-tsgo (TypeScript 7 + Effect diagnostics)
+pnpm check-tsc      # type check with plain tsc
 pnpm check:examples
-pnpm test -- --run
+pnpm lint           # oxlint + dprint check (pnpm lint-fix to apply fixes)
+pnpm test --run
 pnpm build
 ```
 
 GitHub Actions mirrors the local flow:
 
-- `check.yml` runs build, typecheck, and tests
+- `check.yml` runs build, lint, typecheck (effect-tsgo, tsc and examples), and tests
 - `release.yml` uses Changesets to open release PRs and publish to npm
 - `snapshot.yml` publishes PR snapshots through `pkg-pr-new` when enabled
 

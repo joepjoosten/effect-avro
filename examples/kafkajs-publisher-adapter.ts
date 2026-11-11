@@ -1,19 +1,19 @@
-import { Context, Effect, Layer, Schema } from "effect"
 import {
   encodeConfluentFrame,
   register,
   SchemaRegistry,
   type SchemaRegistryClientError
 } from "@effect-avro/schema-registry"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
   encodeOrderEvent,
   OrderCancelled,
+  type OrderEvent,
   OrderEventAvroSchema,
   OrderPaid,
   OrderPlaced,
   orderTopic,
-  orderValueSubject,
-  type OrderEvent
+  orderValueSubject
 } from "./domain.js"
 import { makeInMemorySchemaRegistry } from "./support/in-memory-registry.js"
 
@@ -175,10 +175,11 @@ export class KafkaPublisher extends Context.Service<KafkaPublisher, KafkaPublish
               : registry.getVersion(orderValueSubject, version))
             const payload = yield* Effect.try({
               try: () => encodeOrderEvent(event),
-              catch: (cause) => new OrderEventEncodeError({
-                message: "Unable to encode order event with Effect Schema",
-                cause
-              })
+              catch: (cause) =>
+                new OrderEventEncodeError({
+                  message: "Unable to encode order event with Effect Schema",
+                  cause
+                })
             })
             return encodeConfluentFrame(registered.id, payload)
           })
@@ -288,8 +289,8 @@ const mergeHeaders = (
   sourceHeaders: PublisherSourceHeaders | undefined,
   messageHeaders: KafkaHeaders | undefined
 ): KafkaHeaders => ({
-  ...(sourceHeaders ?? {}),
-  ...(messageHeaders ?? {})
+  ...sourceHeaders,
+  ...messageHeaders
 })
 
 const producerError = (message: string, cause?: unknown): KafkaProducerError =>
@@ -321,17 +322,20 @@ export const program = Effect.gen(function*() {
 
   const publisher = yield* KafkaPublisher
 
-  yield* publisher.publishWithLatestSchema(new OrderPlaced({
-    orderId: "ord_1000",
-    customerId: "cus_123",
-    totalCents: 4999,
-    occurredAt: "2026-06-24T08:00:00.000Z"
-  }), {
-    headers: {
-      eventType: "OrderPlaced",
-      correlationId: "cor_1000"
+  yield* publisher.publishWithLatestSchema(
+    new OrderPlaced({
+      orderId: "ord_1000",
+      customerId: "cus_123",
+      totalCents: 4999,
+      occurredAt: "2026-06-24T08:00:00.000Z"
+    }),
+    {
+      headers: {
+        eventType: "OrderPlaced",
+        correlationId: "cor_1000"
+      }
     }
-  })
+  )
 
   yield* publisher.publishBatch([
     {

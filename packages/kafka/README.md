@@ -13,9 +13,9 @@ pnpm add @effect-avro/kafka @effect-avro/core @effect-avro/schema-registry effec
 ## Usage
 
 ```ts
-import { Effect, Layer } from "effect"
+import { decodeValue, KafkaAvro, serializeRegistryValue } from "@effect-avro/kafka"
 import { SchemaRegistry } from "@effect-avro/schema-registry"
-import { KafkaAvro, decodeValue, serializeRegistryValue } from "@effect-avro/kafka"
+import { Effect, Layer } from "effect"
 
 const schema = {
   type: "record",

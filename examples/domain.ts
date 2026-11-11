@@ -1,6 +1,6 @@
-import { Schema } from "effect"
 import type { AvroSchema } from "@effect-avro/core"
 import { avro, Long, toAvroSchema } from "@effect-avro/schema"
+import { Schema } from "effect"
 
 export class OrderPlaced extends Schema.TaggedClass<OrderPlaced>()("OrderPlaced", {
   orderId: Schema.String,
