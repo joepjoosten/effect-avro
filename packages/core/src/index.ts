@@ -793,7 +793,7 @@ const readBlocks = (reader: BinaryReader, read: (count: number) => void) => {
 }
 
 const textEncoder = new TextEncoder()
-const textDecoder = new TextDecoder()
+const textDecoder = new TextDecoder("utf-8", { ignoreBOM: true })
 
 class BinaryWriter {
   private readonly chunks: Array<Uint8Array> = []

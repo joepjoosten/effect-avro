@@ -15,6 +15,21 @@ describe("@effect-avro/core", () => {
       .toEqual([1, 2, 3])
   })
 
+  it("preserves leading U+FEFF in strings", () => {
+    expect(decode("string", new Uint8Array([8, 239, 187, 191, 120]))).toBe("\ufeffx")
+
+    for (const value of ["\ufeff", "\ufeffx", "\ufeff\ufeffx"]) {
+      expect(decode("string", encode("string", value))).toBe(value)
+    }
+  })
+
+  it("preserves distinct map keys with and without leading U+FEFF", () => {
+    const type = parse({ type: "map", values: "int" })
+    const value = { "\ufeffkey": 1, key: 2 }
+
+    expect(type.fromUint8Array(type.toUint8Array(value))).toEqual(value)
+  })
+
   it("encodes and decodes records, arrays, maps, enums, fixed and unions", () => {
     const schema = {
       type: "record",
