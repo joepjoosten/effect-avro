@@ -13,8 +13,8 @@ pnpm add @effect-avro/node @effect-avro/core effect
 ## Usage
 
 ```ts
-import { Effect } from "effect"
 import { AvroNode, decodeContainer, encodeContainer, readFile, writeFile } from "@effect-avro/node"
+import { Effect } from "effect"
 
 const schema = {
   type: "record",

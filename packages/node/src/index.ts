@@ -1,20 +1,33 @@
+import * as Avro from "@effect-avro/core"
+import { Context, Effect, FileSystem, Layer, PlatformError, Schema } from "effect"
 import { Buffer } from "node:buffer"
 import { randomBytes } from "node:crypto"
 import * as Fs from "node:fs/promises"
-import * as Avro from "@effect-avro/core"
-import { Context, Effect, FileSystem, Layer, PlatformError, Schema } from "effect"
 
 import {
-  AvroContainerError, avroContainerError, magic, schemaMetadataKey, codecMetadataKey,
-  syncMarkerSize, toBuffer, normalizeMetadata, BinaryWriter, BinaryReader,
-  writeMetadata, readMetadata, writeBlock, parseSchema, parseCodec, decodeBlock,
-  type ContainerCodec
+  AvroContainerError,
+  avroContainerError,
+  BinaryReader,
+  BinaryWriter,
+  codecMetadataKey,
+  type ContainerCodec,
+  decodeBlock,
+  magic,
+  normalizeMetadata,
+  parseCodec,
+  parseSchema,
+  readMetadata,
+  schemaMetadataKey,
+  syncMarkerSize,
+  toBuffer,
+  writeBlock,
+  writeMetadata
 } from "./internal/container.js"
-import { decodeContainerEvents, type ContainerHeader } from "./stream.js"
+import { type ContainerHeader, decodeContainerEvents } from "./stream.js"
 export { AvroContainerError } from "./internal/container.js"
 export type { ContainerCodec } from "./internal/container.js"
 export { decodeContainerEvents, decodeContainerRecords, encodeContainerIterable } from "./stream.js"
-export type { ContainerHeader, ContainerEvent } from "./stream.js"
+export type { ContainerEvent, ContainerHeader } from "./stream.js"
 
 const ContainerEncodeOptionsBase = Schema.Struct({
   codec: Schema.optionalKey(Schema.Literals(["null", "deflate"])),
@@ -28,11 +41,10 @@ const ContainerEncodeOptionsBase = Schema.Struct({
   parseOptions: Schema.optionalKey(Avro.ParseOptions)
 })
 export const ContainerEncodeOptions = ContainerEncodeOptionsBase
-export type ContainerEncodeOptions =
-  Omit<typeof ContainerEncodeOptionsBase.Type, "metadata" | "syncMarker"> & {
-    readonly metadata?: Record<string, Buffer | Uint8Array | string>
-    readonly syncMarker?: Buffer | Uint8Array
-  }
+export type ContainerEncodeOptions = Omit<typeof ContainerEncodeOptionsBase.Type, "metadata" | "syncMarker"> & {
+  readonly metadata?: Record<string, Buffer | Uint8Array | string>
+  readonly syncMarker?: Buffer | Uint8Array
+}
 
 export const ContainerFile = <A>(value: Schema.Schema<A>) =>
   Schema.Struct({
@@ -50,7 +62,6 @@ export type ContainerFile<A = unknown> = {
   readonly syncMarker: Buffer
   readonly values: ReadonlyArray<A>
 }
-
 
 export interface AvroNodeService {
   readonly writeContainerFile: <A>(
@@ -196,25 +207,32 @@ export const decodeContainer = <A = unknown>(
   }
 }
 
-export const writeContainerFile = <A>(
+export const writeContainerFile: <A>(
   path: string,
   schema: Avro.AvroSchema,
   values: Iterable<A>,
   options?: ContainerEncodeOptions
-) =>
-  Effect.gen(function*() {
+) => Effect.Effect<void, AvroContainerError | PlatformError.PlatformError, FileSystem.FileSystem> = Effect.fnUntraced(
+  function*<A>(path: string, schema: Avro.AvroSchema, values: Iterable<A>, options?: ContainerEncodeOptions) {
     const fs = yield* FileSystem.FileSystem
     yield* makeAvroNode(fs).writeContainerFile(path, schema, values, options)
-  })
+  }
+)
 
-export const readContainerFile = <A = unknown>(
-  path: string,
-  options?: Avro.ParseOptions
-) =>
-  Effect.gen(function*() {
+// Inferred without a contextual type so that `A` (which only appears in the
+// return type) survives `Effect.fnUntraced`.
+const readContainerFileWithFileSystem = Effect.fnUntraced(
+  function*<A = unknown>(path: string, options?: Avro.ParseOptions) {
     const fs = yield* FileSystem.FileSystem
     return yield* makeAvroNode(fs).readContainerFile<A>(path, options)
-  })
+  }
+)
+
+export const readContainerFile: <A = unknown>(
+  path: string,
+  options?: Avro.ParseOptions
+) => Effect.Effect<ContainerFile<A>, AvroContainerError | PlatformError.PlatformError, FileSystem.FileSystem> =
+  readContainerFileWithFileSystem
 
 export const readContainerIterable = <A = unknown>(
   input: AsyncIterable<Buffer | Uint8Array>,
@@ -223,7 +241,7 @@ export const readContainerIterable = <A = unknown>(
   Effect.tryPromise({
     try: async (signal) => {
       let header: ContainerHeader | undefined
-      const values: A[] = []
+      const values: Array<A> = []
       for await (const event of decodeContainerEvents<A>(input, options, signal)) {
         if (event._tag === "Header") header = event.header
         else values.push(event.value)
@@ -231,30 +249,33 @@ export const readContainerIterable = <A = unknown>(
       if (header === undefined) throw avroContainerError("Missing Avro container header")
       return { ...header, values }
     },
-    catch: (error) => error instanceof AvroContainerError
-      ? error
-      : avroContainerError(`Unable to read Avro container stream: ${message(error)}`, error)
+    catch: (error) =>
+      error instanceof AvroContainerError
+        ? error
+        : avroContainerError(`Unable to read Avro container stream: ${message(error)}`, error)
+  })
+
+const readContainerFileFrom = (fs: FileSystem.FileSystem) =>
+  Effect.fnUntraced(function*<A = unknown>(path: string, options?: Avro.ParseOptions) {
+    const bytes = yield* fs.readFile(path)
+    return yield* Effect.try({
+      try: () => decodeContainer<A>(bytes, options),
+      catch: (error) =>
+        error instanceof AvroContainerError
+          ? error
+          : avroContainerError(`Unable to decode Avro container file: ${message(error)}`, error)
+    })
   })
 
 export const makeAvroNode = (fs: FileSystem.FileSystem): AvroNodeService => ({
-  writeContainerFile: (path, schema, values, options) =>
-    Effect.gen(function*() {
-      const bytes = yield* Effect.try({
-        try: () => encodeContainer(schema, values, options),
-        catch: (error) => avroContainerError(`Unable to encode Avro container file: ${message(error)}`, error)
-      })
-      yield* fs.writeFile(path, bytes)
-    }),
-  readContainerFile: <A = unknown>(path: string, options?: Avro.ParseOptions) =>
-    Effect.gen(function*() {
-      const bytes = yield* fs.readFile(path)
-      return yield* Effect.try({
-        try: () => decodeContainer<A>(bytes, options),
-        catch: (error) => error instanceof AvroContainerError
-          ? error
-          : avroContainerError(`Unable to decode Avro container file: ${message(error)}`, error)
-      })
-    }),
+  writeContainerFile: Effect.fnUntraced(function*(path, schema, values, options) {
+    const bytes = yield* Effect.try({
+      try: () => encodeContainer(schema, values, options),
+      catch: (error) => avroContainerError(`Unable to encode Avro container file: ${message(error)}`, error)
+    })
+    yield* fs.writeFile(path, bytes)
+  }),
+  readContainerFile: readContainerFileFrom(fs),
   readContainerIterable
 })
 
@@ -287,6 +308,4 @@ const nodePlatformError = (method: string, path: string | URL, cause: unknown) =
     cause
   })
 
-
 const message = (error: unknown): string => error instanceof Error ? error.message : String(error)
-

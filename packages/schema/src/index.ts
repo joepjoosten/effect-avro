@@ -72,10 +72,9 @@ export const CompiledAvroSchema = Schema.Struct({
   schema: AvroSchema,
   type: Schema.instanceOf(Object)
 })
-export type CompiledAvroSchema =
-  Omit<typeof CompiledAvroSchema.Type, "type"> & {
-    readonly type: Avro.Type
-  }
+export type CompiledAvroSchema = Omit<typeof CompiledAvroSchema.Type, "type"> & {
+  readonly type: Avro.Type
+}
 
 export interface AvroCodec<S extends Schema.Constraint>
   extends Schema.Codec<S["Type"], Uint8Array, S["DecodingServices"], S["EncodingServices"]>
@@ -99,16 +98,14 @@ export const Fixed = (name: string, size: number, namespace?: string) =>
     ...(namespace === undefined ? {} : { [AvroNamespaceAnnotationId]: namespace })
   })
 
-export const avroName = (name: string, namespace?: string) =>
-  <S extends Schema.Constraint>(schema: S): S =>
-    Schema.annotate({
-      [AvroNameAnnotationId]: name,
-      ...(namespace === undefined ? {} : { [AvroNamespaceAnnotationId]: namespace })
-    })(schema as unknown as Schema.Top) as unknown as S
+export const avroName = (name: string, namespace?: string) => <S extends Schema.Constraint>(schema: S): S =>
+  Schema.annotate({
+    [AvroNameAnnotationId]: name,
+    ...(namespace === undefined ? {} : { [AvroNamespaceAnnotationId]: namespace })
+  })(schema as unknown as Schema.Top) as unknown as S
 
-export const avroAnnotations = (annotations: Record<string, unknown>) =>
-  <S extends Schema.Constraint>(schema: S): S =>
-    Schema.annotate(annotations)(schema as unknown as Schema.Top) as unknown as S
+export const avroAnnotations = (annotations: Record<string, unknown>) => <S extends Schema.Constraint>(schema: S): S =>
+  Schema.annotate(annotations)(schema as unknown as Schema.Top) as unknown as S
 
 class AvroSchemaError extends Schema.TaggedError<AvroSchemaError>()("AvroSchemaError", {
   message: Schema.String,
@@ -155,7 +152,10 @@ export const compileAvro = <S extends Schema.Constraint>(
   const avroSchema = options.avroSchema ?? toAvroSchema(schema, options)
   return {
     schema: avroSchema,
-    type: Avro.parse(avroSchema as Avro.AvroSchema, { restoreTags: true, ...(options.limits === undefined ? {} : { limits: options.limits }) })
+    type: Avro.parse(avroSchema as Avro.AvroSchema, {
+      restoreTags: true,
+      ...(options.limits === undefined ? {} : { limits: options.limits })
+    })
   }
 }
 
@@ -204,8 +204,7 @@ export const fromAvroSchema = (
   ) as Schema.Codec<unknown, unknown, never, never>
 }
 
-const avroIssue = (input: unknown, text: string) =>
-  new SchemaIssue.InvalidValue({ message: text }, input)
+const avroIssue = (input: unknown, text: string) => new SchemaIssue.InvalidValue({ message: text }, input)
 
 const avroSchemaError = (message: string, cause?: unknown): AvroSchemaError =>
   cause === undefined ? new AvroSchemaError({ message }) : new AvroSchemaError({ message, cause })
@@ -458,7 +457,8 @@ const compileField = (
     name,
     type,
     ...(optional && !(Array.isArray(compiled) ? compiled : [compiled]).some((member) => branchName(member) === "null")
-      ? { "x-effect-optional": true } : {}),
+      ? { "x-effect-optional": true } :
+      {}),
     ...(doc === undefined ? {} : { doc }),
     ...(aliases === undefined ? {} : { aliases }),
     ...(order === undefined ? {} : { order }),
@@ -590,7 +590,10 @@ const resolveName = (
   if (annotatedName === undefined && identifier === undefined && title === undefined) {
     const base = name
     let suffix = 2
-    while ((state.schemas.has(fullName(name, namespace)) || state.astByName.has(fullName(name, namespace))) && state.names.get(ast) !== fullName(name, namespace)) {
+    while (
+      (state.schemas.has(fullName(name, namespace)) || state.astByName.has(fullName(name, namespace))) &&
+      state.names.get(ast) !== fullName(name, namespace)
+    ) {
       name = `${base}_${suffix++}`
     }
   }
@@ -686,13 +689,20 @@ const collectRuntimeNames = (schema: AvroSchema, registry: RuntimeRegistry, name
   }
 }
 
-const fromAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRegistry, namespace = registry.namespace): unknown => {
+const fromAvroRuntime = (
+  value: unknown,
+  schema: AvroSchema,
+  registry: RuntimeRegistry,
+  namespace = registry.namespace
+): unknown => {
   const resolved = resolveRuntimeSchema(schema, registry, namespace)
   if (Array.isArray(resolved)) {
     if (value === null) {
       return null
     }
-    const branch = resolved.find((member) => branchName(member) !== "null" && matchesAvro(member, value, registry, namespace))
+    const branch = resolved.find((member) =>
+      branchName(member) !== "null" && matchesAvro(member, value, registry, namespace)
+    )
     return branch === undefined ? value : fromAvroRuntime(value, branch, registry, namespace)
   }
   if (typeof resolved === "string") {
@@ -709,7 +719,16 @@ const fromAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRe
       const out: Record<string, unknown> = {}
       for (const field of concrete.fields) {
         if (field["x-effect-optional"] === true && value[field.name] === null) continue
-        setOwn(out, field.name, fromAvroRuntime(value[field.name], field.type, registry, splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? ""))
+        setOwn(
+          out,
+          field.name,
+          fromAvroRuntime(
+            value[field.name],
+            field.type,
+            registry,
+            splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? ""
+          )
+        )
       }
       const tag = concrete[EffectTagMetadataKey]
       if (tag !== undefined) {
@@ -718,17 +737,26 @@ const fromAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRe
       return out
     }
     case "array":
-      return Array.isArray(value) ? value.map((item) => fromAvroRuntime(item, concrete.items, registry, namespace)) : value
+      return Array.isArray(value)
+        ? value.map((item) => fromAvroRuntime(item, concrete.items, registry, namespace))
+        : value
     case "map":
       return isRecordLike(value)
-        ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, fromAvroRuntime(item, concrete.values, registry, namespace)]))
+        ? Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [key, fromAvroRuntime(item, concrete.values, registry, namespace)])
+        )
         : value
     default:
       return value
   }
 }
 
-const toAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRegistry, namespace = registry.namespace): unknown => {
+const toAvroRuntime = (
+  value: unknown,
+  schema: AvroSchema,
+  registry: RuntimeRegistry,
+  namespace = registry.namespace
+): unknown => {
   const resolved = resolveRuntimeSchema(schema, registry, namespace)
   if (Array.isArray(resolved)) {
     const branch = resolved.find((member) => matchesAvro(member, value, registry, namespace))
@@ -748,16 +776,29 @@ const toAvroRuntime = (value: unknown, schema: AvroSchema, registry: RuntimeRegi
       const out: Record<string, unknown> = {}
       for (const field of concrete.fields) {
         const item = value[field.name] === undefined && field.default === null ? null : value[field.name]
-        setOwn(out, field.name, toAvroRuntime(item, field.type, registry, splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? ""))
+        setOwn(
+          out,
+          field.name,
+          toAvroRuntime(
+            item,
+            field.type,
+            registry,
+            splitName(fullName(concrete.name, concrete.namespace ?? namespace)).namespace ?? ""
+          )
+        )
       }
       if (concrete[EffectTagMetadataKey] !== undefined) out._tag = value._tag
       return out
     }
     case "array":
-      return Array.isArray(value) ? value.map((item) => toAvroRuntime(item, concrete.items, registry, namespace)) : value
+      return Array.isArray(value)
+        ? value.map((item) => toAvroRuntime(item, concrete.items, registry, namespace))
+        : value
     case "map":
       return isRecordLike(value)
-        ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toAvroRuntime(item, concrete.values, registry, namespace)]))
+        ? Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [key, toAvroRuntime(item, concrete.values, registry, namespace)])
+        )
         : value
     case "fixed":
       return toBytes(value)
@@ -779,7 +820,12 @@ const toBytes = (value: unknown): unknown => {
   return value
 }
 
-const matchesAvro = (schema: AvroSchema, value: unknown, registry: RuntimeRegistry, namespace = registry.namespace): boolean => {
+const matchesAvro = (
+  schema: AvroSchema,
+  value: unknown,
+  registry: RuntimeRegistry,
+  namespace = registry.namespace
+): boolean => {
   const resolved = resolveRuntimeSchema(schema, registry, namespace)
   if (Array.isArray(resolved)) {
     return resolved.some((member) => matchesAvro(member, value, registry, namespace))
@@ -813,7 +859,9 @@ const matchesAvro = (schema: AvroSchema, value: unknown, registry: RuntimeRegist
           value._tag === concrete[EffectTagMetadataKey] ||
           !Object.hasOwn(value, "_tag")
         ) &&
-        concrete.fields.every((field: AvroRecordField) => field.default !== undefined || Object.hasOwn(value, field.name))
+        concrete.fields.every((field: AvroRecordField) =>
+          field.default !== undefined || Object.hasOwn(value, field.name)
+        )
     case "enum":
       return typeof value === "string" && concrete.symbols.includes(value)
     case "array":
@@ -827,7 +875,11 @@ const matchesAvro = (schema: AvroSchema, value: unknown, registry: RuntimeRegist
   }
 }
 
-const resolveRuntimeSchema = (schema: AvroSchema, registry: RuntimeRegistry, namespace = registry.namespace): AvroSchema => {
+const resolveRuntimeSchema = (
+  schema: AvroSchema,
+  registry: RuntimeRegistry,
+  namespace = registry.namespace
+): AvroSchema => {
   if (typeof schema === "string" && !primitiveNames.has(schema as AvroPrimitive)) {
     const resolved = registry.named.get(fullName(schema, namespace))
     if (resolved === undefined) throw avroSchemaError(`Unknown Avro type reference ${schema}`)
@@ -835,7 +887,10 @@ const resolveRuntimeSchema = (schema: AvroSchema, registry: RuntimeRegistry, nam
   }
   if (!Array.isArray(schema) && typeof schema !== "string") {
     const concrete = normalizeObjectType(schema)
-    if (typeof concrete.type === "string" && !isComplexTypeName(concrete.type) && !primitiveNames.has(concrete.type as AvroPrimitive)) {
+    if (
+      typeof concrete.type === "string" && !isComplexTypeName(concrete.type) &&
+      !primitiveNames.has(concrete.type as AvroPrimitive)
+    ) {
       return resolveRuntimeSchema(concrete.type, registry, namespace)
     }
   }
@@ -847,7 +902,8 @@ const normalizeObjectType = (schema: AvroSchema): any => {
     return schema
   }
   const objectSchema = schema as Exclude<AvroSchema, string | AvroUnionSchema>
-  return typeof objectSchema.type === "string" || Array.isArray(objectSchema.type) || typeof objectSchema.type === "object"
+  return typeof objectSchema.type === "string" || Array.isArray(objectSchema.type) ||
+      typeof objectSchema.type === "object"
     ? objectSchema
     : { ...objectSchema, type: objectSchema.type }
 }
@@ -917,12 +973,16 @@ const buildEffectSchema = (schema: AvroSchema, ctx: FromAvroContext): Schema.Con
     case "error":
       return buildRecordSchema(concrete, ctx)
     case "enum":
-      return registerImported(concrete, ctx, Schema.Literals(concrete.symbols).annotate({
-        identifier: concrete.name,
-        [AvroNameAnnotationId]: concrete.name,
-        [AvroNamespaceAnnotationId]: concrete.namespace ?? ctx.namespace,
-        ...(concrete.doc === undefined ? {} : { description: concrete.doc })
-      }))
+      return registerImported(
+        concrete,
+        ctx,
+        Schema.Literals(concrete.symbols).annotate({
+          identifier: concrete.name,
+          [AvroNameAnnotationId]: concrete.name,
+          [AvroNamespaceAnnotationId]: concrete.namespace ?? ctx.namespace,
+          ...(concrete.doc === undefined ? {} : { description: concrete.doc })
+        })
+      )
     case "array":
       return Schema.Array(buildEffectSchema(concrete.items, ctx))
     case "map":
@@ -1009,7 +1069,11 @@ const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
   Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true })
 }
 
-const registerImported = (schema: AvroNamedSchema, ctx: FromAvroContext, value: Schema.Constraint): Schema.Constraint => {
+const registerImported = (
+  schema: AvroNamedSchema,
+  ctx: FromAvroContext,
+  value: Schema.Constraint
+): Schema.Constraint => {
   const name = fullName(schema.name, schema.namespace ?? ctx.namespace)
   ctx.schemas.set(name, value)
   for (const alias of schema.aliases ?? []) ctx.schemas.set(fullName(alias, splitName(name).namespace), value)
@@ -1029,9 +1093,13 @@ const compileImported = (schema: AvroSchema, state: CompileState, namespace?: st
     }
     state.schemas.set(name, schema)
     if (concrete.type === "record" || concrete.type === "error") {
-      return { ...concrete, fields: concrete.fields.map((field: AvroRecordField) => ({
-        ...field, type: compileImported(field.type, state, splitName(name).namespace)
-      })) }
+      return {
+        ...concrete,
+        fields: concrete.fields.map((field: AvroRecordField) => ({
+          ...field,
+          type: compileImported(field.type, state, splitName(name).namespace)
+        }))
+      }
     }
     return schema
   }

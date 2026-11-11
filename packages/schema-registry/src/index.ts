@@ -55,16 +55,18 @@ const SchemaRegistryClientOptionsBase = Schema.Struct({
   cache: Schema.optionalKey(Schema.Boolean)
 })
 export const SchemaRegistryClientOptions = SchemaRegistryClientOptionsBase
-export type SchemaRegistryClientOptions =
-  Omit<typeof SchemaRegistryClientOptionsBase.Type, "fetch"> & {
-    readonly fetch?: FetchLike
-  }
+export type SchemaRegistryClientOptions = Omit<typeof SchemaRegistryClientOptionsBase.Type, "fetch"> & {
+  readonly fetch?: FetchLike
+}
 
 export interface SchemaRegistryClient {
   readonly register: (request: RegisterSchemaRequest) => Effect.Effect<RegisteredSchema, SchemaRegistryClientError>
   readonly getId: (request: RegisterSchemaRequest) => Effect.Effect<RegisteredSchema, SchemaRegistryClientError>
   readonly getById: (id: number) => Effect.Effect<RegisteredSchema, SchemaRegistryClientError>
-  readonly getVersion: (subject: string, version: number | "latest") => Effect.Effect<RegisteredSchema, SchemaRegistryClientError>
+  readonly getVersion: (
+    subject: string,
+    version: number | "latest"
+  ) => Effect.Effect<RegisteredSchema, SchemaRegistryClientError>
   readonly getLatest: (subject: string) => Effect.Effect<RegisteredSchema, SchemaRegistryClientError>
   readonly checkCompatibility: (
     request: RegisterSchemaRequest & { readonly version?: number | "latest" }
@@ -74,14 +76,17 @@ export interface SchemaRegistryClient {
 export class SchemaRegistry extends Context.Service<SchemaRegistry, SchemaRegistryClient>()(
   "@effect-avro/schema-registry/SchemaRegistry"
 ) {
-  static readonly layer = (options: SchemaRegistryClientOptions): Layer.Layer<SchemaRegistry, SchemaRegistryClientError> =>
+  static readonly layer = (
+    options: SchemaRegistryClientOptions
+  ): Layer.Layer<SchemaRegistry, SchemaRegistryClientError> =>
     Layer.effect(
       SchemaRegistry,
       Effect.try({
         try: () => SchemaRegistry.of(makeClient(options)),
-        catch: (error) => isSchemaRegistryClientError(error)
-          ? error
-          : schemaRegistryError(message(error), error)
+        catch: (error) =>
+          isSchemaRegistryClientError(error)
+            ? error
+            : schemaRegistryError(message(error), error)
       })
     )
 }
@@ -198,41 +203,53 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
       catch: (error) => isSchemaRegistryClientError(error) ? error : schemaRegistryError(message(error), error)
     })
 
-  const register = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => Effect.suspend(() => {
-    const key = subjectSchemaCacheKey(requestBody.subject, requestBody.schema, requestBody.references, requestBody.schemaType)
-    const cached = bySubjectSchema.get(key)
-    if (useCache && cached !== undefined) {
-      return Effect.succeed(cached)
-    }
-    return Effect.gen(function*() {
-      const response = yield* request<RegistryResponse>(
-        "POST",
-        `/subjects/${encodeURIComponent(requestBody.subject)}/versions`,
-        registryRequestBody(requestBody)
+  const register = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> =>
+    Effect.suspend(() => {
+      const key = subjectSchemaCacheKey(
+        requestBody.subject,
+        requestBody.schema,
+        requestBody.references,
+        requestBody.schemaType
       )
-      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, requestBody))
-      cacheSchema(registered, byId, bySubjectSchema, useCache)
-      return registered
+      const cached = bySubjectSchema.get(key)
+      if (useCache && cached !== undefined) {
+        return Effect.succeed(cached)
+      }
+      return Effect.gen(function*() {
+        const response = yield* request<RegistryResponse>(
+          "POST",
+          `/subjects/${encodeURIComponent(requestBody.subject)}/versions`,
+          registryRequestBody(requestBody)
+        )
+        const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, requestBody))
+        cacheSchema(registered, byId, bySubjectSchema, useCache)
+        return registered
+      })
     })
-  })
 
-  const getId = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => Effect.suspend(() => {
-    const key = subjectSchemaCacheKey(requestBody.subject, requestBody.schema, requestBody.references, requestBody.schemaType)
-    const cached = bySubjectSchema.get(key)
-    if (useCache && cached !== undefined) {
-      return Effect.succeed(cached)
-    }
-    return Effect.gen(function*() {
-      const response = yield* request<RegistryResponse>(
-        "POST",
-        `/subjects/${encodeURIComponent(requestBody.subject)}`,
-        registryRequestBody(requestBody)
+  const getId = (requestBody: RegisterSchemaRequest): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> =>
+    Effect.suspend(() => {
+      const key = subjectSchemaCacheKey(
+        requestBody.subject,
+        requestBody.schema,
+        requestBody.references,
+        requestBody.schemaType
       )
-      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, requestBody))
-      cacheSchema(registered, byId, bySubjectSchema, useCache)
-      return registered
+      const cached = bySubjectSchema.get(key)
+      if (useCache && cached !== undefined) {
+        return Effect.succeed(cached)
+      }
+      return Effect.gen(function*() {
+        const response = yield* request<RegistryResponse>(
+          "POST",
+          `/subjects/${encodeURIComponent(requestBody.subject)}`,
+          registryRequestBody(requestBody)
+        )
+        const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, requestBody))
+        cacheSchema(registered, byId, bySubjectSchema, useCache)
+        return registered
+      })
     })
-  })
 
   const getById = (id: number): Effect.Effect<RegisteredSchema, SchemaRegistryClientError> => {
     const cached = byId.get(id)
@@ -241,7 +258,13 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
     }
     return Effect.gen(function*() {
       const response = yield* request<RegistryResponse>("GET", `/schemas/ids/${id}`)
-      const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, { subject: "", schema: parseSchema(response.schema), schemaType: "AVRO" }, id))
+      const registered = yield* registryEffect(() =>
+        normalizeRegisteredSchema(
+          response,
+          { subject: "", schema: parseSchema(response.schema), schemaType: "AVRO" },
+          id
+        )
+      )
       cacheSchema(registered, byId, bySubjectSchema, useCache)
       return registered
     })
@@ -260,7 +283,9 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
           "GET",
           `/subjects/${encodeURIComponent(subject)}/versions/${version}`
         )
-        const registered = yield* registryEffect(() => normalizeRegisteredSchema(response, { subject, schema: parseSchema(response.schema), schemaType: "AVRO" }))
+        const registered = yield* registryEffect(() =>
+          normalizeRegisteredSchema(response, { subject, schema: parseSchema(response.schema), schemaType: "AVRO" })
+        )
         cacheSchema(registered, byId, bySubjectSchema, useCache)
         if (useCache && version !== "latest") byVersion.set(key, registered)
         return registered
@@ -278,7 +303,9 @@ export const makeClient = (options: SchemaRegistryClientOptions): SchemaRegistry
         registryRequestBody(requestBody)
       )
       const isCompatible = response.isCompatible ?? response.is_compatible
-      if (typeof isCompatible !== "boolean") return yield* Effect.fail(schemaRegistryError("Invalid compatibility response"))
+      if (typeof isCompatible !== "boolean") {
+        return yield* Effect.fail(schemaRegistryError("Invalid compatibility response"))
+      }
       return { isCompatible }
     })
 
@@ -332,10 +359,9 @@ export const RegistryEncodeOptions = Schema.Struct({
   autoRegister: Schema.optionalKey(Schema.Boolean),
   parseOptions: Schema.optionalKey(Avro.ParseOptions)
 })
-export type RegistryEncodeOptions<A> =
-  Omit<typeof RegistryEncodeOptions.Type, "value"> & {
-    readonly value: A
-  }
+export type RegistryEncodeOptions<A> = Omit<typeof RegistryEncodeOptions.Type, "value"> & {
+  readonly value: A
+}
 
 export const encodeWithRegistry = <A>(
   client: SchemaRegistryClient,
@@ -345,7 +371,14 @@ export const encodeWithRegistry = <A>(
     const registered = yield* (options.autoRegister === false ? client.getId(options) : client.register(options))
     const definitions = yield* resolveDefinitions(client, registered)
     return yield* Effect.try({
-      try: () => encodeConfluentFrame(registered.id, encodeRegistryPayload(options.schema, options.value, { ...options.parseOptions, definitions: [...(options.parseOptions?.definitions ?? []), ...definitions] })),
+      try: () =>
+        encodeConfluentFrame(
+          registered.id,
+          encodeRegistryPayload(options.schema, options.value, {
+            ...options.parseOptions,
+            definitions: [...(options.parseOptions?.definitions ?? []), ...definitions]
+          })
+        ),
       catch: registryOrAvroError
     })
   })
@@ -368,7 +401,13 @@ export const decodeWithRegistry = <A = unknown>(
     const registered = yield* client.getById(frame.schemaId)
     const definitions = yield* resolveDefinitions(client, registered)
     return yield* Effect.try({
-      try: () => isBytesSchema(registered.schema) ? frame.payload as A : Avro.decode<A>(registered.schema, frame.payload, { ...options, definitions: [...(options?.definitions ?? []), ...definitions] }),
+      try: () =>
+        isBytesSchema(registered.schema)
+          ? frame.payload as A
+          : Avro.decode<A>(registered.schema, frame.payload, {
+            ...options,
+            definitions: [...(options?.definitions ?? []), ...definitions]
+          }),
       catch: registryOrAvroError
     })
   })
@@ -428,7 +467,10 @@ const cacheSchema = (
   }
   byId.set(registered.id, registered)
   if (registered.subject !== undefined) {
-    bySubjectSchema.set(subjectSchemaCacheKey(registered.subject, registered.schema, registered.references, registered.schemaType), registered)
+    bySubjectSchema.set(
+      subjectSchemaCacheKey(registered.subject, registered.schema, registered.references, registered.schemaType),
+      registered
+    )
   }
 }
 
@@ -465,10 +507,13 @@ const subjectSchemaCacheKey = (
   schema: Avro.AvroSchema,
   references: ReadonlyArray<SchemaReference> = [],
   schemaType = "AVRO"
-) => stableStringify({
-  subject, schema, schemaType,
-  references: references.map((reference) => stableStringify(reference)).sort()
-})
+) =>
+  stableStringify({
+    subject,
+    schema,
+    schemaType,
+    references: references.map((reference) => stableStringify(reference)).sort()
+  })
 
 const schemaFullName = (schema: Avro.AvroSchema): string => {
   const named = findNamedSchema(schema)
@@ -503,8 +548,7 @@ const findNamedSchema = (schema: Avro.AvroSchema): Avro.AvroNamedSchema | undefi
   return typeof objectSchema.type === "string" ? undefined : findNamedSchema(objectSchema.type)
 }
 
-const stableStringify = (value: unknown): string =>
-  JSON.stringify(sortJson(value))
+const stableStringify = (value: unknown): string => JSON.stringify(sortJson(value))
 
 const sortJson = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -542,8 +586,7 @@ const schemaRegistryHttpError = (status: number, body: string): SchemaRegistryHt
     body
   })
 
-const invalidRegistryFrame = (message: string): InvalidRegistryFrame =>
-  new InvalidRegistryFrame({ message })
+const invalidRegistryFrame = (message: string): InvalidRegistryFrame => new InvalidRegistryFrame({ message })
 
 const base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
@@ -574,32 +617,37 @@ const setOwn = <A>(object: Record<string, A>, key: string, value: A): void => {
 }
 
 const registryEffect = <A>(thunk: () => A): Effect.Effect<A, SchemaRegistryClientError> =>
-  Effect.try({ try: thunk, catch: (error) => isSchemaRegistryClientError(error) ? error : schemaRegistryError(message(error), error) })
+  Effect.try({
+    try: thunk,
+    catch: (error) => isSchemaRegistryClientError(error) ? error : schemaRegistryError(message(error), error)
+  })
 
 const resolveDefinitions = (
   client: SchemaRegistryClient,
   root: RegisteredSchema
-): Effect.Effect<ReadonlyArray<Avro.AvroSchema>, SchemaRegistryClientError> => Effect.gen(function*() {
-  const visited = new Set<string>()
-  const names = new Map<string, string>()
-  const definitions: Array<Avro.AvroSchema> = []
-  const visit = (reference: SchemaReference): Effect.Effect<void, SchemaRegistryClientError> => Effect.gen(function*() {
-    const key = JSON.stringify([reference.subject, reference.version])
-    if (visited.has(key)) return
-    visited.add(key)
-    const registered = yield* client.getVersion(reference.subject, reference.version)
-    const identity = stableStringify([registered.schema, registered.references])
-    const previous = names.get(reference.name)
-    if (previous !== undefined && previous !== identity) {
-      return yield* Effect.fail(schemaRegistryError(`Conflicting schema reference ${reference.name}`))
-    }
-    names.set(reference.name, identity)
-    for (const child of registered.references) yield* visit(child)
-    definitions.push(registered.schema)
+): Effect.Effect<ReadonlyArray<Avro.AvroSchema>, SchemaRegistryClientError> =>
+  Effect.gen(function*() {
+    const visited = new Set<string>()
+    const names = new Map<string, string>()
+    const definitions: Array<Avro.AvroSchema> = []
+    const visit = (reference: SchemaReference): Effect.Effect<void, SchemaRegistryClientError> =>
+      Effect.gen(function*() {
+        const key = JSON.stringify([reference.subject, reference.version])
+        if (visited.has(key)) return
+        visited.add(key)
+        const registered = yield* client.getVersion(reference.subject, reference.version)
+        const identity = stableStringify([registered.schema, registered.references])
+        const previous = names.get(reference.name)
+        if (previous !== undefined && previous !== identity) {
+          return yield* Effect.fail(schemaRegistryError(`Conflicting schema reference ${reference.name}`))
+        }
+        names.set(reference.name, identity)
+        for (const child of registered.references) yield* visit(child)
+        definitions.push(registered.schema)
+      })
+    for (const reference of root.references) yield* visit(reference)
+    return definitions
   })
-  for (const reference of root.references) yield* visit(reference)
-  return definitions
-})
 
 const isBytesSchema = (schema: Avro.AvroSchema): boolean =>
   typeof schema === "string" ? schema === "bytes" : !Array.isArray(schema) &&

@@ -12,8 +12,7 @@ export type SelfManagedKafkaRecord = typeof SelfManagedKafkaRecord.Type
 
 export const dedupeSelfManagedKafkaRecords = (
   records: ReadonlyArray<SelfManagedKafkaRecord>
-): Array<SelfManagedKafkaRecord> =>
-  dedupeDecodedKafkaRecordsByValue(records, [["key"]], ["timestamp"])
+): Array<SelfManagedKafkaRecord> => dedupeDecodedKafkaRecordsByValue(records, [["key"]], ["timestamp"])
 
 export const dedupeDecodedKafkaRecordsByValue = <A>(
   records: ReadonlyArray<A>,

@@ -24,6 +24,16 @@ jobs:
         uses: ./.github/actions/setup
       - run: pnpm build
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - run: pnpm lint
+
   types:
     name: Types
     runs-on: ubuntu-latest
@@ -32,7 +42,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - run: pnpm check
+      - name: Check (effect-tsgo tsrs)
+        run: pnpm check
+      - name: Check (tsc)
+        run: pnpm check-tsc
+      - name: Check examples
+        run: pnpm check:examples
 
   test:
     name: Test

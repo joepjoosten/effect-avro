@@ -1,6 +1,15 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
-import { avro, AvroLogicalTypeAnnotationId, AvroPrecisionAnnotationId, Bytes, fromAvroSchema, Long, Fixed, toAvroSchema } from "../src/index.js"
+import {
+  avro,
+  AvroLogicalTypeAnnotationId,
+  AvroPrecisionAnnotationId,
+  Bytes,
+  Fixed,
+  fromAvroSchema,
+  Long,
+  toAvroSchema
+} from "../src/index.js"
 
 class User extends Schema.Class<User>("User")({
   id: Long,
@@ -117,7 +126,7 @@ describe("@effect-avro/schema", () => {
     }))
 })
 
- it("preserves identical tagged union branches, including nested arrays", () => {
+it("preserves identical tagged union branches, including nested arrays", () => {
   const Event = Schema.Union([
     Schema.TaggedStruct("A", { id: Long }),
     Schema.TaggedStruct("B", { id: Long })
@@ -144,11 +153,15 @@ it("normalizes missing optional fields through nested unions", () => {
 })
 
 it("keeps same-named records in separate namespaces through the schema adapter", () => {
-  const schema = { type: "record", name: "a.Root", fields: [
-    { name: "first", type: { type: "record", name: "Item", fields: [{ name: "x", type: "int" }] } },
-    { name: "other", type: { type: "record", name: "b.Item", fields: [{ name: "x", type: "string" }] } },
-    { name: "again", type: "Item" }
-  ] } as const
+  const schema = {
+    type: "record",
+    name: "a.Root",
+    fields: [
+      { name: "first", type: { type: "record", name: "Item", fields: [{ name: "x", type: "int" }] } },
+      { name: "other", type: { type: "record", name: "b.Item", fields: [{ name: "x", type: "string" }] } },
+      { name: "again", type: "Item" }
+    ]
+  } as const
   const codec = avro(fromAvroSchema(schema), { avroSchema: schema })
   const value = { first: { x: 1 }, other: { x: "other" }, again: { x: 2 } }
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
@@ -157,7 +170,7 @@ it("keeps same-named records in separate namespaces through the schema adapter",
 it("preserves special record keys through imported codecs", () => {
   const schema = { type: "record", name: "Special", fields: [{ name: "__proto__", type: "string" }] } as const
   const codec = avro(fromAvroSchema(schema), { avroSchema: schema })
-  const value = JSON.parse('{"__proto__":"data"}')
+  const value = JSON.parse("{\"__proto__\":\"data\"}")
   const result = Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))
   expect(Object.hasOwn(result as object, "__proto__")).toBe(true)
   expect(JSON.stringify(result)).toBe(JSON.stringify(value))
@@ -166,10 +179,14 @@ it("preserves special record keys through imported codecs", () => {
 it("interns enum/fixed definitions and generates distinct nested names", () => {
   const E = Schema.Literals(["A", "B"]).annotate({ identifier: "E" })
   const schema = toAvroSchema(Schema.Struct({ first: E, second: E, a: Fixed("F", 2), b: Fixed("F", 2) }))
-  expect(schema).toMatchObject({ fields: [
-    { type: { type: "enum", name: "E" } }, { type: "E" },
-    { type: { type: "fixed", name: "F" } }, { type: "F" }
-  ] })
+  expect(schema).toMatchObject({
+    fields: [
+      { type: { type: "enum", name: "E" } },
+      { type: "E" },
+      { type: { type: "fixed", name: "F" } },
+      { type: "F" }
+    ]
+  })
   expect(() => toAvroSchema(Schema.Struct({ a: Fixed("F", 2), b: Fixed("F", 3) }))).toThrow("Conflicting Avro name")
   const source = Schema.Struct({
     a: Schema.Struct({ item: Schema.Struct({ x: Schema.String }) }),
@@ -181,14 +198,18 @@ it("interns enum/fixed definitions and generates distinct nested names", () => {
 })
 
 it("imports enum and fixed references in their defining namespaces", () => {
-  const schema = { type: "record", name: "a.R", fields: [
-    { name: "a", type: { type: "enum", name: "E", symbols: ["X"] } },
-    { name: "b", type: "E" },
-    { name: "c", type: { type: "fixed", name: "F", size: 1, aliases: ["Alias"] } },
-    { name: "d", type: "Alias" },
-    { name: "other", type: { type: "enum", name: "b.E", symbols: ["Y"] } },
-    { name: "again", type: "a.E" }
-  ] } as const
+  const schema = {
+    type: "record",
+    name: "a.R",
+    fields: [
+      { name: "a", type: { type: "enum", name: "E", symbols: ["X"] } },
+      { name: "b", type: "E" },
+      { name: "c", type: { type: "fixed", name: "F", size: 1, aliases: ["Alias"] } },
+      { name: "d", type: "Alias" },
+      { name: "other", type: { type: "enum", name: "b.E", symbols: ["Y"] } },
+      { name: "again", type: "a.E" }
+    ]
+  } as const
   const codec = avro(fromAvroSchema(schema), { avroSchema: schema })
   const value = { a: "X", b: "X", c: new Uint8Array([1]), d: new Uint8Array([2]), other: "Y", again: "X" }
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
@@ -203,35 +224,57 @@ it("rejects unsupported native bigint and numeric enum mappings at construction"
 })
 
 it("rejects distinct array and map alternatives instead of discarding values", () => {
-  expect(() => avro(Schema.Union([Schema.Array(Schema.String), Schema.Array(Long)]))).toThrow("Distinct array alternatives")
-  expect(() => avro(Schema.Union([
-    Schema.Record(Schema.String, Schema.String), Schema.Record(Schema.String, Long)
-  ]))).toThrow("Distinct map alternatives")
+  expect(() => avro(Schema.Union([Schema.Array(Schema.String), Schema.Array(Long)]))).toThrow(
+    "Distinct array alternatives"
+  )
+  expect(() =>
+    avro(Schema.Union([
+      Schema.Record(Schema.String, Schema.String),
+      Schema.Record(Schema.String, Long)
+    ]))
+  ).toThrow("Distinct map alternatives")
   const codec = avro(Schema.NullOr(Schema.Array(Long)))
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)([1]))).toEqual([1])
 })
 
 it("attaches logical attributes directly to fixed definitions", () => {
-  const source = Fixed("Decimal", 4).annotate({ [AvroLogicalTypeAnnotationId]: "decimal", [AvroPrecisionAnnotationId]: 4 })
-  expect(toAvroSchema(source)).toEqual({ type: "fixed", name: "Decimal", size: 4, logicalType: "decimal", precision: 4 })
+  const source = Fixed("Decimal", 4).annotate({
+    [AvroLogicalTypeAnnotationId]: "decimal",
+    [AvroPrecisionAnnotationId]: 4
+  })
+  expect(toAvroSchema(source)).toEqual({
+    type: "fixed",
+    name: "Decimal",
+    size: 4,
+    logicalType: "decimal",
+    precision: 4
+  })
   const codec = avro(source)
   const value = new Uint8Array([0, 0, 0, 1])
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
 })
 
 it("preserves imported defaults, logical types and metadata when recompiling", () => {
-  const schema = { type: "record", name: "R", doc: "record", fields: [
-    { name: "x", type: "int", default: 42, aliases: ["oldX"], order: "descending" },
-    { name: "date", type: { type: "int", logicalType: "date" } },
-    { name: "kind", type: { type: "enum", name: "Kind", symbols: ["A", "B"], default: "A" } }
-  ] } as const
+  const schema = {
+    type: "record",
+    name: "R",
+    doc: "record",
+    fields: [
+      { name: "x", type: "int", default: 42, aliases: ["oldX"], order: "descending" },
+      { name: "date", type: { type: "int", logicalType: "date" } },
+      { name: "kind", type: { type: "enum", name: "Kind", symbols: ["A", "B"], default: "A" } }
+    ]
+  } as const
   const imported = fromAvroSchema(schema)
   expect(toAvroSchema(imported)).toEqual(schema)
   expect(() => Schema.decodeUnknownSync(imported)({ date: 1, kind: "A" })).toThrow()
   const codec = avro(imported)
   const value = { x: 42, date: 1, kind: "B" }
   expect(Schema.decodeUnknownSync(codec)(Schema.encodeSync(codec)(value))).toEqual(value)
-  expect(toAvroSchema(fromAvroSchema({ type: "int", logicalType: "date" }))).toEqual({ type: "int", logicalType: "date" })
+  expect(toAvroSchema(fromAvroSchema({ type: "int", logicalType: "date" }))).toEqual({
+    type: "int",
+    logicalType: "date"
+  })
   expect(toAvroSchema(Schema.Struct({ embedded: imported }))).toMatchObject({ fields: [{ type: schema }] })
 })
 

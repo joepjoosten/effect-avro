@@ -1,4 +1,3 @@
-import { Effect, Schema } from "effect"
 import type { KafkaMessage } from "@effect-avro/kafka"
 import {
   decodeConfluentFrame,
@@ -9,14 +8,15 @@ import {
   SchemaRegistry,
   type SchemaRegistryClientError
 } from "@effect-avro/schema-registry"
+import { Effect, Schema } from "effect"
 import {
   decodeOrderEvent,
   encodeOrderEvent,
+  type OrderEvent,
   OrderEventAvroSchema,
   OrderPlaced,
   orderTopic,
-  orderValueSubject,
-  type OrderEvent
+  orderValueSubject
 } from "./domain.js"
 import { makeInMemorySchemaRegistry } from "./support/in-memory-registry.js"
 
@@ -54,10 +54,11 @@ export const encodeOrderMessage = (
     })
     const payload = yield* Effect.try({
       try: () => encodeOrderEvent(event),
-      catch: (cause) => new OrderEventDecodeError({
-        message: "Unable to encode order event with Effect Schema",
-        cause
-      })
+      catch: (cause) =>
+        new OrderEventDecodeError({
+          message: "Unable to encode order event with Effect Schema",
+          cause
+        })
     })
 
     return {
@@ -81,19 +82,21 @@ export const decodeOrderMessage = (
 
     const frame = yield* Effect.try({
       try: () => decodeConfluentFrame(message.value as Uint8Array),
-      catch: (cause) => cause instanceof InvalidRegistryFrame
-        ? cause
-        : new OrderEventDecodeError({ message: "Unable to decode Confluent frame", cause })
+      catch: (cause) =>
+        cause instanceof InvalidRegistryFrame
+          ? cause
+          : new OrderEventDecodeError({ message: "Unable to decode Confluent frame", cause })
     })
 
     yield* getById(frame.schemaId)
 
     return yield* Effect.try({
       try: () => decodeOrderEvent(frame.payload) as OrderEvent,
-      catch: (cause) => new OrderEventDecodeError({
-        message: "Unable to decode order event with Effect Schema",
-        cause
-      })
+      catch: (cause) =>
+        new OrderEventDecodeError({
+          message: "Unable to decode order event with Effect Schema",
+          cause
+        })
     })
   })
 
@@ -105,12 +108,14 @@ const RegistryLive = SchemaRegistry.layer({
 })
 
 export const program = Effect.gen(function*() {
-  const produced = yield* encodeOrderMessage(new OrderPlaced({
-    orderId: "ord_1000",
-    customerId: "cus_123",
-    totalCents: 4999,
-    occurredAt: "2026-06-24T08:00:00.000Z"
-  }))
+  const produced = yield* encodeOrderMessage(
+    new OrderPlaced({
+      orderId: "ord_1000",
+      customerId: "cus_123",
+      totalCents: 4999,
+      occurredAt: "2026-06-24T08:00:00.000Z"
+    })
+  )
 
   const consumed = yield* decodeOrderMessage(produced)
 

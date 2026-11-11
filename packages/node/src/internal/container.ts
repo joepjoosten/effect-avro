@@ -1,7 +1,7 @@
-import { Buffer } from "node:buffer"
-import * as Zlib from "node:zlib"
 import * as Avro from "@effect-avro/core"
 import { Schema } from "effect"
+import { Buffer } from "node:buffer"
+import * as Zlib from "node:zlib"
 export type ContainerCodec = "null" | "deflate"
 
 export class AvroContainerError extends Schema.TaggedError<AvroContainerError>()("AvroContainerError", {
@@ -22,7 +22,10 @@ export const writeBlock = <A>(
   maxBlockBytes?: number
 ) => {
   const raw = Buffer.concat(values.map((value) => Buffer.from(type.toBuffer(value))))
-  if (maxBlockBytes !== undefined && (!Number.isSafeInteger(maxBlockBytes) || maxBlockBytes < 0 || raw.length > maxBlockBytes)) {
+  if (
+    maxBlockBytes !== undefined &&
+    (!Number.isSafeInteger(maxBlockBytes) || maxBlockBytes < 0 || raw.length > maxBlockBytes)
+  ) {
     throw avroContainerError("Avro block exceeds maxBlockBytes")
   }
   const encoded = encodeBlock(codec, raw)
@@ -41,7 +44,11 @@ export const encodeBlock = (codec: ContainerCodec, block: Buffer): Buffer => {
   }
 }
 
-export const decodeBlock = (codec: ContainerCodec, block: Buffer, maxOutputLength = Avro.defaultDecodeLimits.maxBlockBytes): Buffer => {
+export const decodeBlock = (
+  codec: ContainerCodec,
+  block: Buffer,
+  maxOutputLength = Avro.defaultDecodeLimits.maxBlockBytes
+): Buffer => {
   switch (codec) {
     case "null":
       if (block.length > maxOutputLength) throw avroContainerError("Avro block exceeds maxBlockBytes")
@@ -51,7 +58,9 @@ export const decodeBlock = (codec: ContainerCodec, block: Buffer, maxOutputLengt
   }
 }
 
-export const normalizeMetadata = (metadata: Record<string, Buffer | Uint8Array | string> = {}): Record<string, Buffer> => {
+export const normalizeMetadata = (
+  metadata: Record<string, Buffer | Uint8Array | string> = {}
+): Record<string, Buffer> => {
   const out: Record<string, Buffer> = {}
   for (const [key, value] of Object.entries(metadata)) {
     setOwn(out, key, typeof value === "string" ? Buffer.from(value, "utf8") : toBuffer(value))
@@ -79,7 +88,9 @@ export const readMetadata = (reader: BinaryReader): Record<string, Buffer> => {
       return out
     }
     const actualCount = count < 0 ? -count : count
-    if (actualCount > reader.budget.limits.maxCollectionItems) throw avroContainerError("Avro metadata maxCollectionItems exceeded")
+    if (actualCount > reader.budget.limits.maxCollectionItems) {
+      throw avroContainerError("Avro metadata maxCollectionItems exceeded")
+    }
     if (count < 0) {
       reader.readLong()
     }
@@ -140,10 +151,12 @@ export class BinaryWriter {
 }
 
 export class BinaryReader {
+  readonly budget: Avro.DecodeBudget
   readonly buffer: Buffer
   offset = 0
 
-  constructor(buffer: Buffer, readonly budget = new Avro.DecodeBudget()) {
+  constructor(buffer: Buffer, budget = new Avro.DecodeBudget()) {
+    this.budget = budget
     this.buffer = buffer
   }
 

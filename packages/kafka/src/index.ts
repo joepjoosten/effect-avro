@@ -43,14 +43,14 @@ export type AvroSerializerOptions = typeof AvroSerializerOptions.Type
 export const avroSerializer = <A>(
   schema: Avro.AvroSchema,
   options: AvroSerializerOptions = {}
-) => (value: A): Uint8Array =>
-  Avro.encode(schema, value, options.parseOptions)
+) =>
+(value: A): Uint8Array => Avro.encode(schema, value, options.parseOptions)
 
 export const avroDeserializer = <A = unknown>(
   schema: Avro.AvroSchema,
   options: AvroSerializerOptions = {}
-) => (payload: Uint8Array): A =>
-  Avro.decode<A>(schema, payload, options.parseOptions)
+) =>
+(payload: Uint8Array): A => Avro.decode<A>(schema, payload, options.parseOptions)
 
 export const RegistrySerializerOptions = Schema.Struct({
   schema: Avro.AvroSchema,
@@ -68,13 +68,15 @@ export type RegistrySerializerOptions = typeof RegistrySerializerOptions.Type
 export const registrySerializer = <A>(
   client: Registry.SchemaRegistryClient,
   options: RegistrySerializerOptions
-) => (value: A): Effect.Effect<Uint8Array, Registry.SchemaRegistryClientError | Avro.AvroError | KafkaAvroError> =>
+) =>
+(value: A): Effect.Effect<Uint8Array, Registry.SchemaRegistryClientError | Avro.AvroError | KafkaAvroError> =>
   Effect.gen(function*() {
     const subject = yield* Effect.try({
       try: () => resolveSubject(options),
-      catch: (error) => error instanceof KafkaAvroError
-        ? error
-        : kafkaAvroError(message(error), { cause: error })
+      catch: (error) =>
+        error instanceof KafkaAvroError
+          ? error
+          : kafkaAvroError(message(error), { cause: error })
     })
     return yield* Registry.encodeWithRegistry(client, {
       subject,
@@ -100,7 +102,8 @@ export const registryValueSerializer = <A>(
 export const registryDeserializer = <A = unknown>(
   client: Registry.SchemaRegistryClient,
   options?: Avro.ParseOptions
-) => (payload: Uint8Array): Effect.Effect<A, Registry.SchemaRegistryClientError | Avro.AvroError> =>
+) =>
+(payload: Uint8Array): Effect.Effect<A, Registry.SchemaRegistryClientError | Avro.AvroError> =>
   Registry.decodeWithRegistry<A>(client, payload, options)
 
 export const registryKeyDeserializer = registryDeserializer
@@ -204,8 +207,7 @@ export class KafkaAvro extends Context.Service<KafkaAvro, KafkaAvroService>()(
           registryKeySerializer<A>(registry, options),
         registryValueSerializer: <A>(options: Omit<RegistrySerializerOptions, "isKey">) =>
           registryValueSerializer<A>(registry, options),
-        registryDeserializer: <A = unknown>(options?: Avro.ParseOptions) =>
-          registryDeserializer<A>(registry, options),
+        registryDeserializer: <A = unknown>(options?: Avro.ParseOptions) => registryDeserializer<A>(registry, options),
         registryKeyDeserializer: <A = unknown>(options?: Avro.ParseOptions) =>
           registryKeyDeserializer<A>(registry, options),
         registryValueDeserializer: <A = unknown>(options?: Avro.ParseOptions) =>
@@ -214,8 +216,7 @@ export class KafkaAvro extends Context.Service<KafkaAvro, KafkaAvroService>()(
           message: KafkaMessage,
           location: KafkaPayloadLocation,
           options?: Avro.ParseOptions
-        ) =>
-          decodeMessagePayload<A>(registry, message, location, options),
+        ) => decodeMessagePayload<A>(registry, message, location, options),
         decodeMessageKey: <A = unknown>(message: KafkaMessage, options?: Avro.ParseOptions) =>
           decodeMessageKey<A>(registry, message, options),
         decodeMessageValue: <A = unknown>(message: KafkaMessage, options?: Avro.ParseOptions) =>
@@ -226,8 +227,7 @@ export class KafkaAvro extends Context.Service<KafkaAvro, KafkaAvroService>()(
           schema: Avro.AvroSchema,
           value: A,
           options: Omit<RegistrySerializerOptions, "topic" | "schema" | "isKey"> = {}
-        ) =>
-          encodeMessagePayload<A>(registry, message, location, schema, value, options)
+        ) => encodeMessagePayload<A>(registry, message, location, schema, value, options)
       })
     })
   )
